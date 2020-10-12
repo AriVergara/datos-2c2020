@@ -49,7 +49,7 @@ from sklearn.preprocessing import (
 # El primer dataset contiene el `id_usuario`y el booleano `volveria`
 
 # %%
-df_volvera = pd.read_csv('https://drive.google.com/uc?export=download&id=1GoWOQS1bZSKIphmJkkLdVY-BIbTWatQS')
+df_volvera = pd.read_csv('https://drive.google.com/uc?export=download&id=1GoWOQS1bZSKIphmJkkLdVY-BIbTWatQS', index_col=0)
 df_volvera.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
 df_volvera
 
@@ -57,7 +57,7 @@ df_volvera
 # El segundo dataset contiene el resto de los datos encuestados
 
 # %%
-df_datos = pd.read_csv('https://drive.google.com/uc?export=download&id=1jyKSMAqjKZB_J90mcQJAGZyx_NCz2myJ')
+df_datos = pd.read_csv('https://drive.google.com/uc?export=download&id=1jyKSMAqjKZB_J90mcQJAGZyx_NCz2myJ', index_col=0)
 df_datos.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
 df_datos
 
@@ -65,6 +65,7 @@ df_datos
 df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_usuario')
 
 # %%
+df.set_index('id_usuario', inplace=True)
 df
 
 # %%
@@ -76,5 +77,7 @@ report = ProfileReport(
 
 # %%
 report.to_file('reporte.html')
+
+# %%
 
 # %%
