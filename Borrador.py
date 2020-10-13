@@ -25,6 +25,7 @@ import pandas as pd
 import plotly.express as px
 from matplotlib import pyplot as plt
 from pandas_profiling import ProfileReport
+import seaborn as sns
 
 from sklearn.feature_extraction import FeatureHasher
 from sklearn.feature_selection import VarianceThreshold
@@ -79,5 +80,117 @@ report = ProfileReport(
 report.to_file('reporte.html')
 
 # %%
+df.reset_index(inplace=True)
 
 # %%
+df.head()
+
+# %% [markdown]
+# Como se ve en el reporte de Pandas Profiling, el 77% de las filas no tiene un valor en la columna fila, por lo que decidimos que no era de importancia dada la cantidad de missing values que contiene.
+
+# %%
+df.drop(axis=1, columns=["fila"], inplace=True)
+
+# %%
+df.head()
+
+# %%
+df[df.duplicated(subset=df.columns.drop(["id_usuario", "volveria", "tipo_de_sala", "nombre"]))]
+
+# %% [markdown]
+# Se puede ver que si bien el id_ticket aparece repetido, el nombre de la persona que completo la encuesta es diferente, así como su id_usuario. Por lo que interpretamos que esta columna no nos aporta información para predecir la decisión del usuario
+
+# %%
+df.drop(axis=1, columns=["id_ticket"], inplace=True)
+
+# %%
+fig, axes = plt.subplots(nrows=1, ncols=2, dpi=100, figsize=(6.4 * 2, 4.8))
+sns.countplot(x="tipo_de_sala", hue="volveria", data=df, ax=axes[0])
+axes[0].set_ylabel("Cantidad")
+axes[0].set_xlabel("Tipo de sala")
+axes[0].set_title("Cantidad de encuestados segun tipo de sala y si volvería a ver Frozen 4")
+
+
+sns.countplot(x="tipo_de_sala", data=df, ax=axes[1])
+axes[1].set_ylabel("Cantidad")
+axes[1].set_xlabel("Tipo de sala")
+axes[1].set_title("Cantidad de encuestados segun tipo de sala")
+plt.show()
+
+# %% [markdown]
+# El unico tipo de sala que presenta una diferencia notoria es la de 4d, que a su vez es la que mas entradas presenta en el df.
+
+# %%
+fig, axes = plt.subplots(nrows=1, ncols=2, dpi=100, figsize=(6.4 * 2, 4.8))
+sns.countplot(x="nombre_sede", hue="volveria", data=df, ax=axes[0])
+axes[0].set_ylabel("Cantidad")
+axes[0].set_xlabel("Sede")
+axes[0].set_title("Cantidad de encuestados segun sede del cine y si volvería a ver Frozen 4")
+
+
+sns.countplot(x="nombre_sede", data=df, ax=axes[1])
+axes[1].set_ylabel("Cantidad")
+axes[1].set_xlabel("Sede")
+axes[1].set_title("Cantidad de encuestados segun sede del cine")
+plt.show()
+
+# %% [markdown]
+# Casi todos los datos provienen de la sede de palermo
+
+# %%
+fig, axes = plt.subplots(nrows=1, ncols=3, dpi=100, figsize=(6.4 * 2, 4.8))
+palermo = df[df["nombre_sede"] == "fiumark_palermo"] 
+sns.countplot(x="tipo_de_sala", hue="volveria", data=palermo, ax=axes[0])
+axes[0].set_ylabel("Cantidad")
+axes[0].set_xlabel("Sede")
+axes[0].set_title("Palermo")
+
+quilmes = df[df["nombre_sede"] == "fiumark_quilmes"] 
+sns.countplot(x="tipo_de_sala", hue="volveria", data=quilmes, ax=axes[1])
+axes[1].set_ylabel("Cantidad")
+axes[1].set_xlabel("Sede")
+axes[1].set_title("Quilmes")
+
+
+chacarita = df[df["nombre_sede"] == "fiumark_chacarita"] 
+sns.countplot(x="tipo_de_sala", hue="volveria", data=chacarita, ax=axes[2])
+axes[2].set_ylabel("Cantidad")
+axes[2].set_xlabel("Sede")
+axes[2].set_title("Chacarita")
+
+
+
+# %%
+fig, axes = plt.subplots(nrows=1, ncols=2, dpi=100, figsize=(6.4 * 2, 4.8))
+sns.countplot(x="genero", hue="volveria", data=df, ax=axes[0])
+axes[0].set_ylabel("Cantidad")
+axes[0].set_xlabel("Género")
+axes[0].set_title("Cantidad de encuestados segun género y si volvería a ver Frozen 4")
+
+
+sns.countplot(x="genero", data=df, ax=axes[1])
+axes[1].set_ylabel("Cantidad")
+axes[1].set_xlabel("Género")
+axes[1].set_title("Cantidad de encuestados segun género")
+plt.show()
+
+# %% [markdown]
+# La mayoría de los hombres decide no volver mientras que con las mujeres ocurre lo contrario
+
+# %%
+plt.figure(dpi=100)
+plt.title("Distribución del precio de acuerdo a si vuelve o no")
+sns.boxplot(
+    data=df[df.precio_ticket <= 10],
+    y="precio_ticket",
+    x="volveria",
+)
+plt.ylabel("Precio del ticket")
+plt.xticks([False, True], ["No", "Sí"])
+plt.show()
+
+# %%
+Genero y edad
+Tipo de sala, cine y precio
+Amigos y parientes
+
