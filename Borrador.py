@@ -189,8 +189,119 @@ plt.ylabel("Precio del ticket")
 plt.xticks([False, True], ["No", "Sí"])
 plt.show()
 
-# %%
-Genero y edad
-Tipo de sala, cine y precio
-Amigos y parientes
+# %% [markdown]
+# # TODO (12/10)
+# - Genero y edad
+# - Tipo de sala, cine y precio
+# - Amigos y parientes
 
+
+# %% [markdown]
+# ### Relacionando Genero y Edad
+
+# %%
+plt.figure(dpi=100)
+plt.title("Distribución de la edad de los encuestados de acuerdo a su genero")
+sns.boxplot(
+    data=df[df.precio_ticket <= 10],
+    y="edad",
+    x="genero",
+)
+plt.ylabel("Edad")
+plt.show()
+
+# %% [markdown]
+# #### Otra forma de verlo...
+
+# %%
+fig, axes = plt.subplots(nrows=1, ncols=2, sharey=True, dpi=150, figsize=(6.4 * 2, 4.8))
+
+axes[0].hist(df.edad[df.genero == 'hombre'], bins=25)
+axes[0].set_title("Salario bruto")
+axes[0].set_xlabel("Salario")
+axes[0].set_ylabel("Cantidad")
+
+axes[1].hist(df.edad[df.genero == 'mujer'], bins=25)
+axes[1].set_title("Salario neto")
+axes[1].set_xlabel("Salario")
+axes[1].set_ylabel("Cantidad")
+plt.title("Distribucion de edades segun genero")
+plt.show()
+
+# %% [markdown]
+# ## Relacionando Tipo de Sala, Sede y Precio
+
+# %%
+cooccurrence = pd.pivot_table(df, 
+                              values="precio_ticket",
+                              index="nombre_sede", 
+                              columns="tipo_de_sala", 
+                              aggfunc='mean')
+plt.figure(dpi=100)
+plt.title("Precio primedio pagado por la entrada", fontsize=9)
+sns.heatmap(cooccurrence, square=True, cmap="Wistia")
+plt.show()
+
+# %% [markdown]
+# ### Cantidad de acompañantes
+
+# %% [markdown]
+# Primero vamos a probar crear una nueva variable `acompañantes`para buscar relaciones entre las distintas variables y la cantidad de acompañantes con los que vieron la pelicula, sin importar de que tipo sean.
+
+# %%
+df['acompaniantes'] = df.parientes + df.amigos 
+
+# %%
+df.head()
+
+# %%
+plt.figure(dpi=100)
+sns.countplot(
+    x="acompaniantes", data=df, order=df["acompaniantes"].value_counts().index
+)
+plt.ylabel("Cantidad")
+plt.xlabel("Numero de acompañantes")
+plt.title("Cantidad de encuestados según numero de acompañantes")
+plt.show()
+
+# %%
+plt.figure(dpi=100)
+sns.countplot(x="acompaniantes", hue="volveria", data=df)
+plt.ylabel("Cantidad")
+plt.xlabel("Acompañantes")
+plt.title("Cantidad de encuestados segun cantidad de acompañantes y si volvería a ver Frozen 4")
+plt.show()
+
+# %% [markdown]
+# Podemos decir que la gente es mas propensa a volver si fue acompañada? (aunque con pocas personas)
+
+# %% [markdown]
+# ### Dividiendo en familiares y amigos
+
+# %%
+figs, axes = plt.subplots(ncols=2, nrows=1, sharey=True, dpi=100)
+sns.countplot(x="amigos", hue="volveria", data=df, ax=axes[0])
+axes[0].set_ylabel("Cantidad")
+axes[0].set_xlabel("Amigos")
+
+sns.countplot(x='parientes', hue='volveria', data=df, ax=axes[1])
+axes[1].set_ylabel("Cantidad")
+axes[1].set_xlabel("Parientes")
+
+plt.show()
+
+# %%
+cooccurrence = pd.pivot_table(df, 
+                              values="volveria",
+                              index="parientes", 
+                              columns="amigos", 
+                              aggfunc='mean')
+plt.figure(dpi=100)
+plt.title("Precio primedio pagado por la entrada", fontsize=9)
+sns.heatmap(cooccurrence, square=True, cmap="Wistia")
+plt.show()
+
+# %% [markdown]
+# No creo que este grafico sirva, pero lo dejo para que lo chequeemos 
+
+# %%
