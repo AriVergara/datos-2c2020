@@ -70,14 +70,14 @@ df.set_index('id_usuario', inplace=True)
 df
 
 # %%
-from pandas_profiling import ProfileReport
+#from pandas_profiling import ProfileReport
 
-report = ProfileReport(
-    df, title='Resumen de datos TP Parte 1', explorative=True, lazy=False
-)
+#report = ProfileReport(
+    #df, title='Resumen de datos TP Parte 1', explorative=True, lazy=False
+#)
 
 # %%
-report.to_file('reporte.html')
+#report.to_file('reporte.html')
 
 # %%
 df.reset_index(inplace=True)
@@ -138,25 +138,28 @@ plt.show()
 # Casi todos los datos provienen de la sede de palermo
 
 # %%
-fig, axes = plt.subplots(nrows=1, ncols=3, dpi=100, figsize=(6.4 * 2, 4.8))
+fig, axes = plt.subplots(nrows=1, ncols=3, dpi=100, figsize=(6.4 * 2, 4.8), sharey=True)
 palermo = df[df["nombre_sede"] == "fiumark_palermo"] 
 sns.countplot(x="tipo_de_sala", hue="volveria", data=palermo, ax=axes[0])
 axes[0].set_ylabel("Cantidad")
 axes[0].set_xlabel("Sede")
 axes[0].set_title("Palermo")
 
-quilmes = df[df["nombre_sede"] == "fiumark_quilmes"] 
-sns.countplot(x="tipo_de_sala", hue="volveria", data=quilmes, ax=axes[1])
-axes[1].set_ylabel("Cantidad")
-axes[1].set_xlabel("Sede")
-axes[1].set_title("Quilmes")
-
 
 chacarita = df[df["nombre_sede"] == "fiumark_chacarita"] 
-sns.countplot(x="tipo_de_sala", hue="volveria", data=chacarita, ax=axes[2])
+sns.countplot(x="tipo_de_sala", hue="volveria", data=chacarita, ax=axes[1])
+axes[1].set_ylabel("Cantidad")
+axes[1].set_xlabel("Sede")
+axes[1].set_title("Chacarita")
+
+quilmes = df[df["nombre_sede"] == "fiumark_quilmes"] 
+sns.countplot(x="tipo_de_sala", hue="volveria", data=quilmes, ax=axes[2])
 axes[2].set_ylabel("Cantidad")
 axes[2].set_xlabel("Sede")
-axes[2].set_title("Chacarita")
+axes[2].set_title("Quilmes")
+
+
+
 
 
 
@@ -211,24 +214,6 @@ plt.ylabel("Edad")
 plt.show()
 
 # %% [markdown]
-# #### Otra forma de verlo...
-
-# %%
-fig, axes = plt.subplots(nrows=1, ncols=2, sharey=True, dpi=150, figsize=(6.4 * 2, 4.8))
-
-axes[0].hist(df.edad[df.genero == 'hombre'], bins=25)
-axes[0].set_title("Salario bruto")
-axes[0].set_xlabel("Salario")
-axes[0].set_ylabel("Cantidad")
-
-axes[1].hist(df.edad[df.genero == 'mujer'], bins=25)
-axes[1].set_title("Salario neto")
-axes[1].set_xlabel("Salario")
-axes[1].set_ylabel("Cantidad")
-plt.title("Distribucion de edades segun genero")
-plt.show()
-
-# %% [markdown]
 # ## Relacionando Tipo de Sala, Sede y Precio
 
 # %%
@@ -272,36 +257,247 @@ plt.xlabel("Acompañantes")
 plt.title("Cantidad de encuestados segun cantidad de acompañantes y si volvería a ver Frozen 4")
 plt.show()
 
+# %%
+figs, axes = plt.subplots(ncols=2, nrows=1, sharey=True, dpi=100)
+sns.countplot(x="acompaniantes", hue="volveria", data=df[df.genero == 'hombre'], ax=axes[0])
+axes[0].set_ylabel("Cantidad")
+axes[0].set_xlabel("Acompañantes")
+axes[0].set_title('Hombres')
+
+sns.countplot(x='acompaniantes', hue='volveria', data=df[df.genero=='mujer'], ax=axes[1])
+axes[1].set_ylabel("Cantidad")
+axes[1].set_xlabel("Acompañantes")
+axes[1].set_title('Mujeres')
+figs.suptitle("Cantidad de encuestados segun cantidad de acompañantes y si volveria a ver Frozen 4")
+plt.show()
+
 # %% [markdown]
-# Podemos decir que la gente es mas propensa a volver si fue acompañada? (aunque con pocas personas)
+# Cuando el hombre va acompañado la diferencia se achica? O es por las cantidades?
 
 # %% [markdown]
 # ### Dividiendo en familiares y amigos
 
 # %%
 figs, axes = plt.subplots(ncols=2, nrows=1, sharey=True, dpi=100)
-sns.countplot(x="amigos", hue="volveria", data=df, ax=axes[0])
+sns.countplot(x="acompaniantes", hue="volveria", data=df, ax=axes[0])
 axes[0].set_ylabel("Cantidad")
 axes[0].set_xlabel("Amigos")
 
-sns.countplot(x='parientes', hue='volveria', data=df, ax=axes[1])
+sns.countplot(x='acompaniantes', hue='volveria', data=df, ax=axes[1])
 axes[1].set_ylabel("Cantidad")
 axes[1].set_xlabel("Parientes")
-
+figs.suptitle("Cantidad de encuestados segun numero y tipo de acompañantes")
 plt.show()
 
 # %%
-cooccurrence = pd.pivot_table(df, 
-                              values="volveria",
-                              index="parientes", 
-                              columns="amigos", 
-                              aggfunc='mean')
-plt.figure(dpi=100)
-plt.title("Precio primedio pagado por la entrada", fontsize=9)
-sns.heatmap(cooccurrence, square=True, cmap="Wistia")
+figs, axes = plt.subplots(ncols=2, nrows=1, sharey=True, dpi=100)
+sns.countplot(x="amigos", hue="volveria", data=df[df.genero == 'mujer'], ax=axes[0])
+axes[0].set_ylabel("Cantidad")
+axes[0].set_xlabel("Amigos")
+
+sns.countplot(x='parientes', hue='volveria', data=df[df.genero=='mujer'], ax=axes[1])
+axes[1].set_ylabel("Cantidad")
+axes[1].set_xlabel("Parientes")
+figs.suptitle("Cantidad de mujeres encuestadas segun cantidad de acompañantes y si volveria a ver Frozen 4")
+plt.show()
+
+# %%
+figs, axes = plt.subplots(ncols=2, nrows=1, sharey=True, dpi=100)
+sns.countplot(x="amigos", hue="volveria", data=df[df.genero == 'hombre'], ax=axes[0])
+axes[0].set_ylabel("Cantidad")
+axes[0].set_xlabel("Amigos")
+
+sns.countplot(x='parientes', hue='volveria', data=df[df.genero=='hombre'], ax=axes[1])
+axes[1].set_ylabel("Cantidad")
+axes[1].set_xlabel("Parientes")
+figs.suptitle("Cantidad de hombres encuestados segun cantidad de acompañantes y si volveria a ver Frozen 4")
 plt.show()
 
 # %% [markdown]
-# No creo que este grafico sirva, pero lo dejo para que lo chequeemos 
+# Buscar relacion entre volveria y genero masculino  || no volveria y genero femenino
+
+# %% [markdown]
+# ### Relación genero y precio ticket
 
 # %%
+plt.figure(dpi=100)
+plt.title("Distribución del precio de acuerdo a si vuelve o no en genero femenino")
+sns.boxplot(
+    data=df[(df.precio_ticket <= 30) & (df.genero == 'mujer')],
+    y="precio_ticket",
+    x="volveria",
+)
+plt.ylabel("Precio del ticket")
+plt.xticks([False, True], ["No", "Sí"])
+plt.show()
+
+# %% [markdown]
+#
+
+# %%
+plt.figure(dpi=100)
+plt.title("Distribución del precio de acuerdo a si vuelve o no en genero masculino")
+sns.boxplot(
+    data=df[(df.precio_ticket <= 30) & (df.genero == 'hombre')],
+    y="precio_ticket",
+    x="volveria",
+)
+plt.ylabel("Precio del ticket")
+plt.xticks([False, True], ["No", "Sí"])
+plt.show()
+
+# %% [markdown]
+# ### Relación entre edad y genero
+
+# %%
+plt.figure(dpi=100)
+plt.title("Distribución de la edad de acuerdo a si vuelve o no en genero femenino")
+sns.boxplot(
+    data=df[(df.precio_ticket <= 30) & (df.genero == 'mujer')],
+    y="edad",
+    x="volveria",
+)
+plt.ylabel("Edad")
+plt.xticks([False, True], ["No", "Sí"])
+plt.show()
+
+# %%
+plt.figure(dpi=100)
+plt.title("Distribución de la edad de acuerdo a si vuelve o no en genero masculino")
+sns.boxplot(
+    data=df[(df.precio_ticket <= 30) & (df.genero == 'hombre')],
+    y="edad",
+    x="volveria",
+)
+plt.ylabel("Edad")
+plt.xticks([False, True], ["No", "Sí"])
+plt.show()
+
+# %% [markdown]
+# ### Relacion entre tipo de sala y precio del ticket
+
+# %%
+plt.figure(dpi=100)
+plt.title("Distribución del precio segun tipo de sala")
+sns.boxplot(
+    data=df[df.precio_ticket <= 30],
+    y="precio_ticket",
+    x="tipo_de_sala",
+)
+plt.ylabel("Precio del ticket")
+plt.show()
+
+# %%
+plt.figure(dpi = 100)
+plt.hist(df.precio_ticket[df.tipo_de_sala.str.strip() == '4d'], bins=10)
+plt.title("Cantidad de encuestados segun precio ticket para sala 4d")
+plt.show()
+
+# %%
+plt.figure(dpi = 100)
+plt.hist(df.precio_ticket[df.tipo_de_sala.str.strip() == 'normal'], bins=50)
+plt.title("Cantidad de encuestados segun precio ticket para sala normal")
+plt.show()
+
+# %%
+df_mujeres = df[df.genero.str.strip() == 'mujer']
+fig, axes = plt.subplots(nrows=1, ncols=3, dpi=100, figsize=(6.4 * 2, 4.8), sharey=True)
+palermo = df_mujeres[df_mujeres["nombre_sede"] == "fiumark_palermo"] 
+sns.countplot(x="tipo_de_sala", hue="volveria", data=palermo, ax=axes[0])
+axes[0].set_ylabel("Cantidad")
+axes[0].set_xlabel("Sede")
+axes[0].set_title("Palermo")
+
+
+chacarita = df_mujeres[df_mujeres["nombre_sede"] == "fiumark_chacarita"] 
+sns.countplot(x="tipo_de_sala", hue="volveria", data=chacarita, ax=axes[1])
+axes[1].set_ylabel("Cantidad")
+axes[1].set_xlabel("Sede")
+axes[1].set_title("Chacarita")
+
+quilmes = df_mujeres[(df_mujeres["nombre_sede"] == "fiumark_quilmes") ] 
+sns.countplot(x="tipo_de_sala", hue="volveria", data=quilmes, ax=axes[2])
+axes[2].set_ylabel("Cantidad")
+axes[2].set_xlabel("Sede")
+axes[2].set_title("Quilmes")
+fig.suptitle("Cantidad de mujeres encuestadas segun tipo de sla y sede, y si volverian a ver Frozen 4")
+plt.show()
+
+# %% [markdown]
+# Aumenta la probabilidad de volver en mujeres si la sala es normal o 3d. Incluso 4d en quilmes y chacarita
+
+# %%
+plt.figure(dpi=100)
+sns.countplot(x="acompaniantes", hue="volveria", data=df)
+plt.ylabel("Cantidad")
+plt.xlabel("Acompañantes")
+plt.title("Cantidad de encuestados segun cantidad de acompañantes y si volvería a ver Frozen 4")
+plt.show()
+
+# %%
+df_hombres_volverian = df[(df.genero == 'hombre') & (df.volveria == 1)]
+
+# %%
+plt.figure(dpi=100)
+sns.countplot(x="acompaniantes", data=df_hombres_volverian)
+plt.ylabel("Cantidad")
+plt.xlabel("Acompañantes")
+plt.title("Cantidad de encuestados hombres que si volverian segun cantidad de acompañantes")
+plt.show()
+
+
+# %% [markdown]
+# # Planteo del baseline
+
+# %%
+def baseline(fila):
+    if fila['genero'] == 'hombre':
+        return 0
+    if fila['tipo_de_sala'] == '4d' and fila['nombre_sede'] == 'fiumark_palermo':
+        return 0
+    #if fila['parientes'] + fila['amigos'] > 3:
+     #   return 0
+    return 1
+
+
+# %%
+df['volveria_1'] = 0
+
+# %%
+df.head()
+
+# %%
+
+for nro_fila in range(len(df)):
+    df.loc[nro_fila,'volveria_1'] = baseline(df.loc[nro_fila,:])
+
+
+# %%
+df.head()
+
+# %%
+df_aciertos = df[df.volveria == df.volveria_1]
+
+# %%
+len(df_aciertos[df_aciertos.genero == 'mujer']) / len(df[df.genero == 'mujer'])
+
+# %%
+len(df_aciertos[df_aciertos.genero == 'hombre']) / len(df[df.genero == 'hombre'])
+
+# %%
+len(df_aciertos) / len(df)
+
+# %% [markdown]
+# ### Distribucion de edad segun cantidad de amigos y parientes
+
+# %%
+figs, axes = plt.subplots(ncols=2, nrows=1, sharey=True, dpi=100)
+figs.suptitle("Distribución de la edad segun cantidad de parientes en hombres")
+sns.boxplot(
+    data=df[(df.genero == 'mujer')],
+    y="precio_ticket",
+    x="volveria",
+)
+plt.ylabel("Precio del ticket")
+plt.xticks([False, True], ["No", "Sí"])
+plt.show()
