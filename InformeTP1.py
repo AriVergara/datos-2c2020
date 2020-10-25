@@ -425,6 +425,11 @@ plt.show()
 # %% [markdown]
 # ### Relacionando Genero y Edad
 
+# %% [markdown]
+# Se buscó relacionar el genero con otras variables del dataset, con el objetivo de verificar otros factores importantes que puedan influenciar a ambos sexos a la hora de elegir si volverian o no a ver Frozen 4.
+#
+# Entre esas variables, se decidió comenzar con la edad:
+
 # %%
 plt.figure(dpi=100)
 plt.title("Distribución de la edad de los encuestados de acuerdo a su genero")
@@ -436,6 +441,9 @@ sns.boxplot(
 plt.ylabel("Edad")
 plt.xlabel("Género")
 plt.show()
+
+# %% [markdown]
+# Tal como refleja el grafico, el rango etario de los encuestados es similar en ambos generos, ubicandose la mediana cerca de los 30 años de edad y el rango intercuartil entre los 20 y los 40 años. 
 
 # %%
 plt.figure(dpi=100)
@@ -448,15 +456,21 @@ sns.boxplot(
 )
 plt.ylabel("Edad")
 plt.xlabel("Género")
-plt.legend(loc="upper center", label="Volvería")
-ajustar_leyenda_columna_volveria(plt.gcf().axes[0])
+plt.legend(loc="upper center")
+ajustar_leyenda(plt.gcf().axes[0], {'0': 'No volveria', '1': 'Volveria'})
 plt.show()
 
 # %% [markdown]
-# ### Dividiendo en familiares y amigos
+# Se representan los mismos datos pero diferenciando la decisión sobre volver o no a ver Frozen 4. 
 
 # %% [markdown]
-# Buscar relacion entre volveria y genero masculino  || no volveria y genero femenino
+# En principio, no se extraen resultados significativos de las visualizaciones realidadas, las mismas reflejan las desiciones de cada genero graficadas en [Columna genero](#Columna-genero)
+
+# %% [markdown]
+# ### Relacionando Genero y Acompañantes
+
+# %% [markdown]
+# En vista de que las columnas `parientes` y `amigos` tienen comportamientos similares tanto separadas como combinadas, se decide relacionar el genero de los encuestados con la cantidad total de acompañantes.
 
 # %%
 figs, axes = plt.subplots(ncols=2, nrows=1, sharey=True, dpi=100)
@@ -464,94 +478,105 @@ sns.countplot(x="acompaniantes", hue="volveria", data=df[df.genero == 'hombre'],
 axes[0].set_ylabel("Cantidad")
 axes[0].set_xlabel("Acompañantes")
 axes[0].set_title('Hombres')
+ajustar_leyenda_columna_volveria(axes[0])
 
 sns.countplot(x='acompaniantes', hue='volveria', data=df[df.genero=='mujer'], ax=axes[1])
 axes[1].set_ylabel("Cantidad")
 axes[1].set_xlabel("Acompañantes")
 axes[1].set_title('Mujeres')
+ajustar_leyenda_columna_volveria(axes[1])
 figs.suptitle("Cantidad de encuestados segun cantidad de acompañantes y si volveria a ver Frozen 4")
 plt.show()
 
-# %% [markdown]
-# Cuando el hombre va acompañado la diferencia se achica? O es por las cantidades?
-
-# %% [markdown]
-# # TODO (12/10)
-# - Genero y edad
-# - Tipo de sala, cine y precio
-# - Amigos y parientes
-
-
-# %% [markdown]
-# ## Relacionando Tipo de Sala, Sede y Precio
+# %%
+df_hombres = df[df.genero == 'hombre']
+df_hombres_volveria = df_hombres[df_hombres.volveria == 1]
+hombres_volverian_vc = df_hombres_volveria.acompaniantes.value_counts()
 
 # %%
-cooccurrence = pd.pivot_table(df, 
-                              values="precio_ticket",
-                              index="nombre_sede", 
-                              columns="tipo_de_sala", 
-                              aggfunc='mean')
-plt.figure(dpi=100)
-plt.title("Precio primedio pagado por la entrada", fontsize=9)
-sns.heatmap(cooccurrence, square=True, cmap="Wistia")
-plt.show()
+print(f'Porcentaje de hombres que fueron solos y declararon que volverian: {hombres_volverian_vc[0] / len(df_hombres[df_hombres.acompaniantes == 0]) * 100}')
+print(f'Porcentaje de hombres que fueron con un acompañante y declararon que volverian: {hombres_volverian_vc[1] / len(df_hombres[df_hombres.acompaniantes == 1]) * 100}')
+print(f'Porcentaje de hombres que fueron con dos acompañantes y declararon que volverian: {hombres_volverian_vc[2] / len(df_hombres[df_hombres.acompaniantes == 2]) * 100}')
 
 # %% [markdown]
-# ### Relación genero y precio ticket
+# Pueden extraerse dos observaciones del resultado de este analisis:
+# - En el genero masculino, la mayor diferencia entre respuestas positivas y negativas sobre si volverian a ver Frozen 4 se encuentra cuando declaran haber ido sin acompañantes. Luego, al aumentar el numero de acompañantes, se reduce la diferencia.
+# - En el genero femenino el comportamiento es similar, con la diferencia que el mayor porcentaje es de respuestas positivas.
+
+# %% [markdown]
+# Recordando lo visto en [el analisis de los acompañantes](#Columnas-parientes-y-amigos) se puede adjudicar este comportamiento a la diferencia en cantidad de encuestas respecto del numero de acompañantes.
+
+# %% [markdown]
+# ### Relacionando Genero y Precio del ticket
+
+# %% [markdown]
+# En busqueda de una relación con mayor fuerza entre el genero y otros factores, se buscó relacionarlo con el precio pagado por la entrada:
 
 # %%
-plt.figure(dpi=100)
-plt.title("Distribución del precio de acuerdo a si vuelve o no en genero femenino")
+figs, axes = plt.subplots(ncols=2, nrows=1, sharey=True, dpi=100)
+plt.suptitle("Distribución del precio de acuerdo a si vuelve o no en ambos generos")
 sns.boxplot(
     data=df[(df.precio_ticket <= 30) & (df.genero == 'mujer')],
     y="precio_ticket",
     x="volveria",
-)
-plt.ylabel("Precio del ticket")
-plt.xticks([False, True], ["No", "Sí"])
-plt.show()
+    ax=axes[0]
 
-# %%
-plt.figure(dpi=100)
-plt.title("Distribución del precio de acuerdo a si vuelve o no en genero masculino")
+)
+axes[0].set_ylabel("Precio del ticket")
+axes[0].set_title("Mujeres")
+
 sns.boxplot(
     data=df[(df.precio_ticket <= 30) & (df.genero == 'hombre')],
     y="precio_ticket",
     x="volveria",
+    ax=axes[1]
+
 )
-plt.ylabel("Precio del ticket")
-plt.xticks([False, True], ["No", "Sí"])
+axes[1].set_ylabel("Precio del ticket")
+axes[1].set_title("Hombres")
 plt.show()
 
 # %% [markdown]
-# ### Relación entre edad y genero
+# # TODO revisar esto o sacarlo
+
+# %% [markdown]
+# ### Relacionando Genero, Tipo de Sala y Sede
 
 # %%
-plt.figure(dpi=100)
-plt.title("Distribución de la edad de acuerdo a si vuelve o no en genero femenino")
-sns.boxplot(
-    data=df[(df.precio_ticket <= 30) & (df.genero == 'mujer')],
-    y="edad",
-    x="volveria",
-)
-plt.ylabel("Edad")
-plt.xticks([False, True], ["No", "Sí"])
-plt.show()
-
-# %%
-plt.figure(dpi=100)
-plt.title("Distribución de la edad de acuerdo a si vuelve o no en genero masculino")
-sns.boxplot(
-    data=df[(df.precio_ticket <= 30) & (df.genero == 'hombre')],
-    y="edad",
-    x="volveria",
-)
-plt.ylabel("Edad")
-plt.xticks([False, True], ["No", "Sí"])
+fig, axes = plt.subplots(nrows=1, ncols=3, dpi=100, figsize=(6.4 * 2, 4.8), sharey=True)
+sedes = [sede.split('_')[1].capitalize() for sede in df_mujeres.nombre_sede.unique()]
+def graficar_por_genero_y_sede(genero, axes):
+    df_genero = df[df.genero == genero].dropna()
+    ax = 0
+    for sede in df_mujeres.nombre_sede.unique():
+        df_sede = df_genero[df_genero.nombre_sede == sede]
+        sns.countplot(x="tipo_de_sala", hue="volveria", data=df_sede, ax=axes[ax])
+        axes[ax].set_ylabel("Cantidad")
+        axes[ax].set_xlabel("Sede")
+        axes[ax].set_title(sedes[ax])
+        ajustar_leyenda_columna_volveria(axes[ax])
+        ax += 1
+graficar_por_genero_y_sede('mujer', axes)
+fig.suptitle("Cantidad de mujeres encuestadas según tipo de sala y sede, y si volverian a ver Frozen 4")
 plt.show()
 
 # %% [markdown]
-# ### Relacion entre tipo de sala y precio del ticket
+# Puede notarse en los gráficos que, en el género femenino, la respuesta negativa sobre si volvería a ver Frozen 4 aumenta cuando se trata de una sala 4d. Incluso supera a la respuesta positiva para la sede de Palermo específicamente.
+
+# %%
+fig, axes = plt.subplots(nrows=1, ncols=3, dpi=100, figsize=(6.4 * 2, 4.8), sharey=True)
+graficar_por_genero_y_sede('hombre', axes)
+fig.suptitle("Cantidad de hombres encuestados según tipo de sala y sede, y si volverian a ver Frozen 4")
+plt.show()
+
+# %% [markdown]
+# Por otro lado, no puede extraerse una conclusion certera haciendo el mismo analisis sobre el genero masculino
+
+# %% [markdown]
+# ### Relacionando tipo de sala y precio del ticket
+
+# %% [markdown]
+# En busca de ampliar la conclusión sobre el aumento de respuestas negativas en mujeres que fueron a salas 4d, se decidió relación el tipo de sala con el precio abonado:
 
 # %%
 plt.figure(dpi=100)
@@ -564,66 +589,100 @@ sns.boxplot(
 plt.ylabel("Precio del ticket")
 plt.show()
 
-# %%
-plt.figure(dpi = 100)
-plt.hist(df.precio_ticket[df.tipo_de_sala.str.strip() == '4d'], bins=10)
-plt.title("Cantidad de encuestados segun precio ticket para sala 4d")
-plt.show()
-
-# %%
-plt.figure(dpi = 100)
-plt.hist(df.precio_ticket[df.tipo_de_sala.str.strip() == 'normal'], bins=50)
-plt.title("Cantidad de encuestados segun precio ticket para sala normal")
-plt.show()
-
-# %%
-df_mujeres = df[df.genero.str.strip() == 'mujer']
-fig, axes = plt.subplots(nrows=1, ncols=3, dpi=100, figsize=(6.4 * 2, 4.8), sharey=True)
-palermo = df_mujeres[df_mujeres["nombre_sede"] == "fiumark_palermo"] 
-sns.countplot(x="tipo_de_sala", hue="volveria", data=palermo, ax=axes[0])
-axes[0].set_ylabel("Cantidad")
-axes[0].set_xlabel("Sede")
-axes[0].set_title("Palermo")
-
-
-chacarita = df_mujeres[df_mujeres["nombre_sede"] == "fiumark_chacarita"] 
-sns.countplot(x="tipo_de_sala", hue="volveria", data=chacarita, ax=axes[1])
-axes[1].set_ylabel("Cantidad")
-axes[1].set_xlabel("Sede")
-axes[1].set_title("Chacarita")
-
-quilmes = df_mujeres[(df_mujeres["nombre_sede"] == "fiumark_quilmes") ] 
-sns.countplot(x="tipo_de_sala", hue="volveria", data=quilmes, ax=axes[2])
-axes[2].set_ylabel("Cantidad")
-axes[2].set_xlabel("Sede")
-axes[2].set_title("Quilmes")
-fig.suptitle("Cantidad de mujeres encuestadas segun tipo de sla y sede, y si volverian a ver Frozen 4")
-plt.show()
+# %% [markdown]
+# Aqui se notó un resultado inesperado ya que, visto desde el sentido comun, se esperaba un rango de precio mas elevado para las salas 4d y 3d, respecto de la sala normal.
 
 # %% [markdown]
-# Aumenta la probabilidad de volver en mujeres si la sala es normal o 3d. Incluso 4d en quilmes y chacarita
+# ### Relacionando Edad con Tipo de Sala
 
 # %% [markdown]
-# ### Distribucion de edad segun cantidad de amigos y parientes
+# Se busca observar la influencia de la edad al elegir un tipo de sala. De este análisis podría extraerse una condición determinante a la hora de decidir si una persona volvería o no a ver Frozen 4.
 
 # %%
-figs, axes = plt.subplots(ncols=2, nrows=1, sharey=True, dpi=100)
-figs.suptitle("Distribución de la edad segun cantidad de parientes en hombres")
+plt.figure(dpi=100)
+plt.title("Distribución de la edad según tipo de sala")
 sns.boxplot(
-    data=df[(df.genero == 'mujer')],
-    y="precio_ticket",
-    x="volveria",
+    data=df,
+    y="edad",
+    x="tipo_de_sala",
 )
-plt.ylabel("Precio del ticket")
-plt.xticks([False, True], ["No", "Sí"])
+plt.ylabel("Edad")
+plt.xlabel("Tipo de Sala")
+plt.show()
+
+# %% [markdown]
+# Se divide el grafico anterior por género en busca de una mejor observación:
+
+# %%
+fig, axes = plt.subplots(nrows=1, ncols=2, dpi=100, figsize=(6.4 * 2, 4.8), sharey=True)
+
+sns.boxplot(data=df[df.genero == 'hombre'], y="edad", x="tipo_de_sala", ax=axes[0])
+axes[0].set_ylabel("Edad")
+axes[0].set_xlabel("Tipo de Sala")
+axes[0].set_title("Hombres")
+    
+sns.boxplot(data=df[df.genero == 'mujer'], y="edad", x="tipo_de_sala", ax=axes[1])
+axes[1].set_ylabel("Edad")
+axes[1].set_xlabel("Tipo de Sala")
+axes[1].set_title("Mujeres")
+
+fig.suptitle("Distribucion de la edad segun el tipo de sala")
+plt.show()
+
+# %% [markdown]
+# No puede extraerse una conclusión del grafico resultante. El comportamiento es similar para ambos géneros y no se refleja en él alguna característica que influencie en la decisión de volver o no a ver Frozen 4.
+
+# %% [markdown]
+# ### Relacionando la Edad con la cantidad de Acompañantes
+
+# %% [markdown]
+# Se representa a continuación una distibucion de la cantidad promedio de acompañantes segun la edad, a modo de observacion:
+
+# %%
+plt.figure(dpi=150)
+sns.lineplot(
+    data=df, x='edad', y='acompaniantes', hue='volveria', estimator='mean'
+)
+plt.show()
+
+# %% [markdown]
+# Si bien no es la mejor forma de graficarlo, se puede ver una relación entre la edad y los acompañantes respecto de si volveria (Agregue la condicion al baseline y suma un 1% creo. Pero tengo miedo que sea muy overfitting
+
+# %% [markdown]
+# # TODO ver esto de arriba
+
+# %% [markdown]
+# Pruebo lo mismo con precio tickey y edad
+
+# %%
+plt.figure(dpi=150)
+sns.lineplot(
+    data=df, x='edad', y='precio_ticket', hue='volveria', estimator='mean'
+)
+plt.show()
+
+# %%
+plt.figure(dpi=150)
+sns.lineplot(
+    data=df, x='edad', y='parientes', hue='volveria', estimator='mean'
+)
+plt.show()
+
+# %%
+plt.figure(dpi=150)
+sns.lineplot(
+    data=df, x='edad', y='amigos', hue='volveria', estimator='mean'
+)
 plt.show()
 
 
 # %% [markdown]
-# # Planteo del baseline
+# ## Planteo del baseline
 
 # %%
 def baseline(fila):
+    if fila['edad'] < 20 and fila['parientes'] + fila['amigos'] <= 3:
+        return 1
     if fila['genero'] == 'hombre':
         return 0
     if fila['tipo_de_sala'] == '4d' and fila['nombre_sede'] == 'fiumark_palermo':
@@ -659,3 +718,5 @@ len(df_aciertos[df_aciertos.genero == 'hombre']) / len(df[df.genero == 'hombre']
 
 # %%
 len(df_aciertos) / len(df)
+
+# %%
