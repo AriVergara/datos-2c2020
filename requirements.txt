@@ -1,0 +1,9 @@
+jupyterlab
+jupytext
+numpy
+matplotlib
+pandas
+pandas-profiling
+plotly
+seaborn
+sklearn
