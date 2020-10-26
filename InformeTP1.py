@@ -31,8 +31,11 @@ sns.set()
 
 
 # %%
-def ajustar_leyenda(axes, labels_mapeados, label_leyenda):
-    axes.legend(title=label_leyenda)
+def ajustar_leyenda(axes, labels_mapeados, label_leyenda, loc=None):
+    if loc:
+        axes.legend(title=label_leyenda, loc=loc)
+    else:
+        axes.legend(title=label_leyenda)
     for t in axes.get_legend().texts:
         t.set_text(labels_mapeados[t.get_text()])
         
@@ -42,13 +45,8 @@ def ajustar_leyenda_columna_volveria(axes, loc=None):
         '0': "No",
         '1': "Sí"
     }
-    ajustar_leyenda(axes, labels_mapeados, "Volvería")
+    ajustar_leyenda(axes, labels_mapeados, "Volvería", loc)
 
-
-# %% [markdown]
-# ## Análisis general del dataset
-#
-# Se cuenta con dos datasets diferentes, los cuales se pueden vincular mediante la columna `id_usuario`. 
 
 # %% [markdown]
 # El primer dataset contiene el `id_usuario`y el booleano `volveria`. 
@@ -56,7 +54,7 @@ def ajustar_leyenda_columna_volveria(axes, loc=None):
 # %%
 df_volvera = pd.read_csv('tp-2020-2c-train-cols1.csv')
 df_volvera.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
-df_volvera
+df_volvera.head()
 
 # %% [markdown]
 # El segundo dataset contiene el resto de los datos encuestados.
@@ -64,13 +62,25 @@ df_volvera
 # %%
 df_datos = pd.read_csv('tp-2020-2c-train-cols2.csv')
 df_datos.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
-df_datos
+df_datos.head()
 
 # %%
 df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_usuario')
 
 # %%
-df.head(10)
+df.head()
+
+# %% [markdown]
+# A partir de este nuevo dataset se procederá con el análisis, algunas preguntas interesntes a tratar de responder son:
+# - ¿Predomina el público infantil?
+# - ¿Las personas que deciden volver fueron acompañadas?
+# - ¿Predomina algún género sobre el otro en los encuestados que quisieran volver a ver Frozen 4?
+# - ¿Es importante el precio a la hora de decidir si volver a ver Frozen 4?
+
+# %% [markdown]
+# ## Análisis general del dataset
+#
+# Se cuenta con dos datasets diferentes, los cuales se pueden vincular mediante la columna `id_usuario`. 
 
 # %%
 from pandas_profiling import ProfileReport
@@ -310,25 +320,44 @@ ajustar_leyenda_columna_volveria(axes[1][2])
 # Se aplica el mismo análisis inicial que para las columnas anteriores.
 
 # %%
-df.genero.value_counts()
-
-# %%
 fig, axes = plt.subplots(nrows=1, ncols=2, dpi=100, figsize=(6.4 * 2, 4.8))
+generos = df.genero.unique()
+fig.suptitle("Análisis de encuestados según el género y si volvería a ver Frozen 4")
+
 sns.countplot(x="genero", hue="volveria", data=df, ax=axes[0])
 axes[0].set_ylabel("Cantidad")
 axes[0].set_xlabel("Género")
-axes[0].set_title("Cantidad de encuestados segun género y si volvería a ver Frozen 4")
+axes[0].set_title("Cantidad para cada género")
 ajustar_leyenda_columna_volveria(axes[0])
 
 
-sns.countplot(x="genero", data=df, ax=axes[1])
-axes[1].set_ylabel("Cantidad")
+sns.barplot(
+    data=df.groupby("genero")
+    .volveria.value_counts(normalize=True)
+    .rename("volveria_prop")
+    .mul(100)
+    .reset_index(),
+    x='genero',
+    y="volveria_prop",
+    hue='volveria',
+    ax=axes[1],
+    order=generos
+)
+axes[1].set_ylabel("Porcentaje (%)")
 axes[1].set_xlabel("Género")
-axes[1].set_title("Cantidad de encuestados segun género")
+axes[1].set_title("Porcentaje para cada género")
+ajustar_leyenda_columna_volveria(axes[1])
 plt.show()
 
+# %%
+print("Cantidad de encuestados por género")
+display(df.genero.value_counts())
+print(" ")
+print("Porcentaje de encuestados por género")
+display(df.genero.value_counts().div(df.pipe(len)).mul(100))
+
 # %% [markdown]
-# Se observa que la gran mayoría de los hombres opta por no volver, mientras que con las mujeres ocurre lo contrario. A su vez, hay mayor cantidad de hombres (64%) que mujeres encuestadas (36%). Las tendencias que se observan en esta columna aportan información valiosa a la hora de realizar la predicción. Si el baseline utilizace solamente esta columna, clasificando a los hombres como que no volverían y a las mujeres como que sí lo harían, se obtendria un accuracy aceptable con este mismo dataset.
+# Se observa que la gran mayoría de los hombres opta por no volver, mientras que con las mujeres ocurre lo contrario. A su vez, como se vió en el Pandas Profiling, hay mayor cantidad de hombres (64%) que mujeres encuestadas (36%). Las tendencias que se observan en esta columna aportan información valiosa a la hora de realizar la predicción. Si el baseline utilizace solamente esta columna, clasificando a los hombres como que no volverían y a las mujeres como que sí lo harían, se obtendria un accuracy aceptable con este mismo dataset.
 #
 
 # %% [markdown]
@@ -338,7 +367,7 @@ plt.show()
 df.edad.describe()
 
 # %% [markdown]
-# Se puede observar que las edades son valores de tipo float (el mínimo es 3.42). Inicialmente se esperaban que fueran de tipo entero, pero la edad no es un valor discreto, ya que se pueden contar tanto los meses como los días además de los años. A su vez, existen registros de encuestas en donde no se indica la edad, como se explicó anteriormente.
+# Las edades son valores de tipo float (el mínimo es 3.42). Inicialmente se esperaban que fueran de tipo entero, pero la edad no es un valor discreto, ya que se pueden contar tanto los meses como los días además de los años. A su vez, existen registros de encuestas en donde no se indica la edad, como se explicó anteriormente.
 #
 # Se procede a visualizar la distribución de valores que tiene esta columna:
 
@@ -346,15 +375,25 @@ df.edad.describe()
 df_edad = df.dropna()
 
 # %%
-plt.figure(dpi=100)
-plt.title("Distribución de la edad de los encuestados a lo largo del dataset")
-plt.hist(x="edad", data=df_edad, bins=40)
-plt.ylabel("Cantidad")
-plt.xlabel("Edad")
+fig, axes = plt.subplots(nrows=1, ncols=2, dpi=100, figsize=(6.4 * 2, 4.8), sharey=True)
+
+fig.suptitle("Distribución de la edad de los encuestados a lo largo del dataset")
+axes[0].hist(x="edad", data=df_edad[df_edad.volveria == 1], bins=20)
+axes[0].set_ylabel("Cantidad")
+axes[0].set_xlabel("Edad")
+axes[0].set_title("Escuestados que volverían a ver Frozen 4")
+
+axes[1].hist(x="edad", data=df_edad[df_edad.volveria == 0], bins=20)
+axes[1].set_ylabel("Cantidad")
+axes[1].set_xlabel("Edad")
+axes[1].set_title("Escuestados que no volverían a ver Frozen 4")
+
 plt.show()
 
 # %% [markdown]
 # Se puede ver que una gran cantidad del público encuestado se encuentra entre los 20 y 40 años aproximadamente, como se vió al comienzo de esta sección.
+#
+# Considerando que hay mas encuestados que no volverían, podemos asumir que las distribuciones son similares. Esto se puede corroborar en el siguiente grafico:
 
 # %%
 plt.figure(dpi=100)
@@ -370,13 +409,13 @@ plt.xticks([False, True], ["No", "Sí"])
 plt.show()
 
 # %% [markdown]
-# Este gráfico muestra que la edad se distribuye de forma similar para ambas clases. Por si sóla no permite concluir algo respecto a si una persona volvería o no. 
+# Este gráfico confirma que la edad se distribuye de forma similar para ambas clases. Por si sóla no permite concluir algo respecto a si una persona volvería o no. 
 
 # %% [markdown]
 # ### Columna `precio`
 
 # %% [markdown]
-# De lo observado en el reporte de Pandas Profiling, se pudo definir que prácticamente todas las entradas tiene un valor menor o igual a 10 (el precio es un numero entero con valor mínimo 1 y máximo 50). Se analiza la distribución de los precios (de aquellas entradas con precio de tiket menor o igual a 10), de acuerdo a si vuelve o no.
+# De lo observado en el reporte de Pandas Profiling, se pudo definir que prácticamente todas las entradas tiene un valor menor o igual a 10 (el precio es un numero entero con valor mínimo 1 y máximo 50). Se analiza la distribución de los precios (de aquellas entradas con precio de ticket menor o igual a 10), de acuerdo a si vuelve o no.
 
 # %%
 print(f'Porcentaje de tickets con precio menor o igual a 10: {len(df[df.precio_ticket <= 10]) / len(df) * 100}')
@@ -390,6 +429,7 @@ sns.boxplot(
     x="volveria",
 )
 plt.ylabel("Precio del ticket")
+plt.xlabel("Volvería")
 plt.xticks([False, True], ["No", "Sí"])
 plt.show()
 
@@ -403,33 +443,47 @@ plt.show()
 # Primero se analiza la columna `amigos`:
 
 # %%
-df.amigos.describe()
-
-# %%
 df.amigos.value_counts()
 
 # %%
-figs, axes = plt.subplots(ncols=2, nrows=1, dpi=100, figsize=(10, 5))
+fig, axes = plt.subplots(ncols=2, nrows=1, dpi=100, figsize=(6.4 * 2, 4.8))
+fig.suptitle("Análisis de encuestados según la cantidad de amigos y si volvería a ver Frozen 4")
 
-plt.subplots_adjust(wspace=0.4)
 sns.countplot(x="amigos", hue="volveria", data=df, ax=axes[0])
 axes[0].set_ylabel("Cantidad de encuestados")
 axes[0].set_xlabel("Cantidad de amigos")
-axes[0].set_title("Cantidad de encuestados según el número \n de amigos que lo acompañó y si volvería")
+axes[0].set_title("Cantidad de encuestados para cada cantidad de amigos")
 ajustar_leyenda_columna_volveria(axes[0])
 
 
-sns.countplot(x="amigos", data=df, ax=axes[1])
-axes[1].set_ylabel("Cantidad de encuestados")
+sns.barplot(
+    data=df.groupby("amigos")
+    .volveria.value_counts(normalize=True)
+    .rename("volveria_prop")
+    .mul(100)
+    .reset_index(),
+    x='amigos',
+    y="volveria_prop",
+    hue='volveria',
+    ax=axes[1],
+)
+axes[1].set_ylabel("Porcentaje (%)")
 axes[1].set_xlabel("Cantidad de amigos")
-axes[1].set_title("Cantidad de encuestados según el \n número de amigos que lo acompañó")
+axes[1].set_title("Porcentaje para cada cantidad de amigos")
+ajustar_leyenda_columna_volveria(axes[1])
 
+plt.show()
 
+# %%
+print("Cantidad de encuestados por cantidad de amigos")
+display(df.amigos.value_counts())
+print(" ")
+print("Porcentaje de encuestados por cantidad de amigos")
+display(df.amigos.value_counts().div(df.pipe(len)).mul(100))
 
 # %%
 amigos_value_counts = df.amigos.value_counts()
 cantidad_de_encuestados = len(df)
-print(f'Porcentaje de encuestados que van sin ningún amigo: {amigos_value_counts[0] / cantidad_de_encuestados * 100}')
 print(f'Porcentaje de encuestados que van a lo sumo con un amigo: {(amigos_value_counts[0] + amigos_value_counts[1]) / cantidad_de_encuestados * 100}')
 
 # %% [markdown]
@@ -439,33 +493,48 @@ print(f'Porcentaje de encuestados que van a lo sumo con un amigo: {(amigos_value
 # Se repite el análisis para la columna `parientes`:
 
 # %%
-df.parientes.describe()
-
-# %%
 df.parientes.value_counts()
 
 # %%
-figs, axes = plt.subplots(ncols=2, nrows=1, dpi=100, figsize=(10, 5))
+fig, axes = plt.subplots(ncols=2, nrows=1, dpi=100, figsize=(6.4 * 2, 4.8))
+fig.suptitle("Análisis de encuestados según la cantidad de parientes y si volvería a ver Frozen 4")
 
 plt.subplots_adjust(wspace=0.4)
 sns.countplot(x="parientes", hue="volveria", data=df, ax=axes[0])
 axes[0].set_ylabel("Cantidad de encuestados")
 axes[0].set_xlabel("Cantidad de parientes")
-axes[0].set_title("Cantidad de encuestados según el número \n de parientes que lo acompañó y si volvería")
+axes[0].set_title("Cantidad de encuestados para cada cantidad de parientes")
 ajustar_leyenda_columna_volveria(axes[0])
 
 
-sns.countplot(x="parientes", data=df, ax=axes[1])
-axes[1].set_ylabel("Cantidad de encuestados")
+sns.barplot(
+    data=df.groupby("parientes")
+    .volveria.value_counts(normalize=True)
+    .rename("volveria_prop")
+    .mul(100)
+    .reset_index(),
+    x='parientes',
+    y="volveria_prop",
+    hue='volveria',
+    ax=axes[1],
+)
+axes[1].set_ylabel("Porcentaje (%)")
 axes[1].set_xlabel("Cantidad de parientes")
-axes[1].set_title("Cantidad de encuestados según el \n número de parientes que lo acompañó")
+axes[1].set_title("Porcentaje para cada cantidad de parientes")
+ajustar_leyenda_columna_volveria(axes[1])
 
 plt.show()
 
 # %%
+print("Cantidad de encuestados por cantidad de parientes")
+display(df.parientes.value_counts())
+print(" ")
+print("Porcentaje de encuestados por cantidad de parientes")
+display(df.parientes.value_counts().div(df.pipe(len)).mul(100))
+
+# %%
 parientes_value_counts = df.parientes.value_counts()
-print(f'Porcentaje de encuestados que van sin ningún amigo: {parientes_value_counts[0] / cantidad_de_encuestados * 100}')
-print(f'Porcentaje de encuestados que van a lo sumo con un amigo: {(parientes_value_counts[0] + parientes_value_counts[1]) / cantidad_de_encuestados * 100}')
+print(f'Porcentaje de encuestados que van a lo sumo con un pariente: {(parientes_value_counts[0] + parientes_value_counts[1]) / cantidad_de_encuestados * 100}')
 
 # %% [markdown]
 # Ocurre algo similar a la columna `amigos`, dado que el 75.7% fue sin ningún familiar y el 89.5% fue a lo sumo con un pariente. En este caso, la cantidad de encuestados que van con dos familiares es más cercana a los que van con uno. 
@@ -477,32 +546,51 @@ print(f'Porcentaje de encuestados que van a lo sumo con un amigo: {(parientes_va
 df['acompaniantes'] = df.parientes + df.amigos 
 
 # %%
-acompaniantes_value_counts = df.acompaniantes.value_counts()
-print(f'Porcentaje de encuestados que van sin acompañantes: {acompaniantes_value_counts[0] / cantidad_de_encuestados * 100}')
-print(f'Porcentaje de encuestados que van a lo sumo con un acompañante: {(acompaniantes_value_counts[0] + acompaniantes_value_counts[1]) / cantidad_de_encuestados * 100}')
-print(f'Porcentaje de encuestados que van a lo sumo con dos acompañantes: {(acompaniantes_value_counts[0] + acompaniantes_value_counts[1] + acompaniantes_value_counts[2]) / cantidad_de_encuestados * 100}')
-
-# %%
-figs, axes = plt.subplots(ncols=2, nrows=1, dpi=100, figsize=(10, 5))
+fig, axes = plt.subplots(ncols=2, nrows=1, dpi=100, figsize=(6.4 * 2, 4.8))
+fig.suptitle("Análisis de encuestados según la cantidad de acompañantes y si volvería a ver Frozen 4")
 
 plt.subplots_adjust(wspace=0.4)
 sns.countplot(x="acompaniantes", hue="volveria", data=df, ax=axes[0])
 axes[0].set_ylabel("Cantidad de encuestados")
 axes[0].set_xlabel("Cantidad de acompañantes")
-axes[0].set_title("Cantidad de encuestados según el número \n de acompañantes y si volvería")
+axes[0].set_title("Cantidad de encuestados para cada cantidad de acompañantes")
 ajustar_leyenda_columna_volveria(axes[0])
 
 
-sns.countplot(x="acompaniantes", data=df, ax=axes[1])
-axes[1].set_ylabel("Cantidad de encuestados")
+sns.barplot(
+    data=df.groupby("acompaniantes")
+    .volveria.value_counts(normalize=True)
+    .rename("volveria_prop")
+    .mul(100)
+    .reset_index(),
+    x='acompaniantes',
+    y="volveria_prop",
+    hue='volveria',
+    ax=axes[1],
+)
+axes[1].set_ylabel("Porcentaje (%)")
 axes[1].set_xlabel("Cantidad de acompañantes")
-axes[1].set_title("Cantidad de encuestados según el \n número de acompañantes")
+axes[1].set_title("Porcentaje para cada cantidad de acompañantes")
+ajustar_leyenda_columna_volveria(axes[1])
+
 plt.show()
 
+# %%
+print("Cantidad de encuestados por cantidad de acompaniantes")
+display(df.acompaniantes.value_counts())
+print(" ")
+print("Porcentaje de encuestados por cantidad de acompaniantes")
+display(df.acompaniantes.value_counts().div(df.pipe(len)).mul(100))
+
+# %%
+acompaniantes_value_counts = df.acompaniantes.value_counts()
+print(f'Porcentaje de encuestados que van a lo sumo con un acompañante: {(acompaniantes_value_counts[0] + acompaniantes_value_counts[1]) / cantidad_de_encuestados * 100}')
+print(f'Porcentaje de encuestados que van a lo sumo con dos acompañantes: {(acompaniantes_value_counts[0] + acompaniantes_value_counts[1] + acompaniantes_value_counts[2]) / cantidad_de_encuestados * 100}')
+
 # %% [markdown]
-# Al combinar la cantidad de amigos y parientes en una sola columna, no se observa un comportamiento diferente. Se puede destacar que las proporciones para gente que va con uno y dos acompañantes son similares (ganando aquellos que volverían a ver Frozen 4). 
+# Al combinar la cantidad de amigos y parientes en una sola columna, no se observa un comportamiento diferente. Se puede destacar que para los encuestados que fueorn con entre uno y tres acompañantes, el porcentaje de aqullos que deciden volver es mayor. Sin embargo, estos representan sólo el 30% de la cantidad de encuestados en total. 
 #
-# Se esperaría que la mayor cantidad de encuestados vaya con al menos un acompañante, dado que no es tan común ver gente sola, y menos considerando que la encuesta es sobre una película animada como Frozen 3.
+# Se esperaría que la mayor cantidad de encuestados vaya con al menos un acompañante, dado que no es tan común ver gente sola en el cine, y menos considerando que la encuesta es sobre una película animada como Frozen 3.
 
 # %% [markdown]
 # ## Relacionando columnas
@@ -514,196 +602,223 @@ plt.show()
 # - ¿La edad influye en la decisión de los encuestados? ¿Y la cantidad de acompañantes?
 
 # %% [markdown]
-# ### Relacionando Genero y Edad
+# ### Relacionando `genero` y `edad`
 
 # %% [markdown]
-# Se buscó relacionar el genero con otras variables del dataset, con el objetivo de verificar otros factores importantes que puedan influenciar a ambos sexos a la hora de elegir si volverian o no a ver Frozen 4.
+# Se buscó relacionar el genero con otras variables del dataset, con el objetivo de verificar otros factores importantes que puedan influenciar a ambos sexos a la hora de elegir si volverían o no a ver Frozen 4.
 #
 # Entre esas variables, se decidió comenzar con la edad:
 
 # %%
-plt.figure(dpi=100)
+fig, axes = plt.subplots(nrows=1, ncols=2, dpi=100, figsize=(6.4 * 2, 4.8), sharey=True)
+df_hombres = df[df.genero == 'hombre']
+df_mujeres = df[df.genero == 'mujer']
+fig.suptitle("Distribución de la edad en el género masculino")
+
+#Hombres
+axes[0].hist(x="edad", data=df_hombres[df_hombres.volveria == 1], bins=20)
+axes[0].set_ylabel("Cantidad")
+axes[0].set_xlabel("Edad")
+axes[0].set_title("Escuestados que volverían a ver Frozen 4")
+
+axes[1].hist(x="edad", data=df_hombres[df_hombres.volveria == 0], bins=20)
+axes[1].set_ylabel("Cantidad")
+axes[1].set_xlabel("Edad")
+axes[1].set_title("Escuestados que no volverían a ver Frozen 4")
+
+plt.show()
+
+# %%
+fig, axes = plt.subplots(nrows=1, ncols=2, dpi=100, figsize=(6.4 * 2, 4.8), sharey=True)
+df_mujeres = df[df.genero == 'mujer']
+fig.suptitle("Distribución de la edad en el género femenino")
+
+#Hombres
+axes[0].hist(x="edad", data=df_mujeres[df_mujeres.volveria == 1], bins=20)
+axes[0].set_ylabel("Cantidad")
+axes[0].set_xlabel("Edad")
+axes[0].set_title("Escuestadas que volverían a ver Frozen 4")
+
+axes[1].hist(x="edad", data=df_mujeres[df_mujeres.volveria == 0], bins=20)
+axes[1].set_ylabel("Cantidad")
+axes[1].set_xlabel("Edad")
+axes[1].set_title("Escuestadas que no volverían a ver Frozen 4")
+plt.ylim(0,25)
+plt.show()
+
+# %%
+plt.figure(figsize=(6.4, 4.8), dpi=100)
 plt.title("Distribución de la edad de los encuestados de acuerdo a su genero")
 sns.boxplot(
     data=df,
     y="edad",
     x="genero",
+    hue='volveria'
 )
+ajustar_leyenda_columna_volveria(plt.gcf().axes[0], 'upper center')
 plt.ylabel("Edad")
 plt.xlabel("Género")
 plt.show()
 
 # %% [markdown]
-# Tal como refleja el grafico, el rango etario de los encuestados es similar en ambos generos, ubicandose la mediana cerca de los 30 años de edad y el rango intercuartil entre los 20 y los 40 años. 
+# Tal como refleja en los gráficos, el rango etario de los encuestados es similar en ambos géneros, ubicándose la mediana cerca de los 30 años de edad y el rango intercuartil entre los 20 y los 40 años. 
+
+# %% [markdown]
+# En principio, no se extraen resultados significativos de las visualizaciones realidadas, las mismas reflejan las desiciones de cada genero graficadas en [Columna genero](#Columna-genero).
+
+# %% [markdown]
+# ### Relacionando `genero` y `acompaniantes`
+
+# %% [markdown]
+# En vista de que las columnas `parientes` y `amigos` tienen comportamientos similares tanto separadas como combinadas, se decide relacionar el género de los encuestados con la cantidad total de acompañantes.
 
 # %%
-plt.figure(dpi=100)
-plt.title("Distribución de la edad de los encuestados de acuerdo a su genero \n y si volvería o no")
-sns.boxplot(
-    data=df,
-    y="edad",
-    x="genero",
-    hue="volveria"
-)
-plt.ylabel("Edad")
-plt.xlabel("Género")
-plt.legend(loc="upper center")
-ajustar_leyenda_columna_volveria(plt.gcf().axes[0])
-plt.show()
+fig, axes = plt.subplots(nrows=1, ncols=2, dpi=100, figsize=(6.4 * 2, 4.8))
+acompaniantes = df.acompaniantes.unique().sort()
+fig.suptitle("Análisis de encuestados de género masculino según cantidad de acompañantes")
 
-# %% [markdown]
-# Se representan los mismos datos pero diferenciando la decisión sobre volver o no a ver Frozen 4. 
-
-# %% [markdown]
-# En principio, no se extraen resultados significativos de las visualizaciones realidadas, las mismas reflejan las desiciones de cada genero graficadas en [Columna genero](#Columna-genero)
-
-# %% [markdown]
-# ### Relacionando Genero y Acompañantes
-
-# %% [markdown]
-# En vista de que las columnas `parientes` y `amigos` tienen comportamientos similares tanto separadas como combinadas, se decide relacionar el genero de los encuestados con la cantidad total de acompañantes.
-
-# %%
-figs, axes = plt.subplots(ncols=2, nrows=1, sharey=True, dpi=100)
-sns.countplot(x="acompaniantes", hue="volveria", data=df[df.genero == 'hombre'], ax=axes[0])
+sns.countplot(x="acompaniantes", hue="volveria", data=df[df.genero == 'hombre'], ax=axes[0], order=acompaniantes)
 axes[0].set_ylabel("Cantidad")
 axes[0].set_xlabel("Acompañantes")
-axes[0].set_title('Hombres')
+axes[0].set_title('Cantidad para cada número de acompañantes')
 ajustar_leyenda_columna_volveria(axes[0])
 
-sns.countplot(x='acompaniantes', hue='volveria', data=df[df.genero=='mujer'], ax=axes[1])
-axes[1].set_ylabel("Cantidad")
+
+sns.barplot(
+    data=df[df.genero == 'hombre'].groupby("acompaniantes")
+    .volveria.value_counts(normalize=True)
+    .rename("volveria_prop")
+    .mul(100)
+    .reset_index(),
+    x='acompaniantes',
+    y="volveria_prop",
+    hue='volveria',
+    ax=axes[1],
+    order=acompaniantes
+)
+axes[1].set_ylabel("Porcentaje (%)")
 axes[1].set_xlabel("Acompañantes")
-axes[1].set_title('Mujeres')
+axes[1].set_title("Porcentaje para cada número de acompañantes")
 ajustar_leyenda_columna_volveria(axes[1])
-figs.suptitle("Cantidad de encuestados segun cantidad de acompañantes y si volvería a ver Frozen 4")
 plt.show()
 
 # %%
 df_hombres = df[df.genero == 'hombre']
-df_hombres_volveria = df_hombres[df_hombres.volveria == 1]
-hombres_volverian_vc = df_hombres_volveria.acompaniantes.value_counts()
+print("Cantidad de encuestados hombres por cantidad de acompañantes")
+display(df_hombres.acompaniantes.value_counts())
+print(" ")
+print("Porcentaje de encuestados hombres por cantidad de acompañantes")
+display(df_hombres.acompaniantes.value_counts().div(df_hombres.pipe(len)).mul(100))
 
 # %%
-print(f'Porcentaje de hombres que fueron solos y declararon que volverian: {hombres_volverian_vc[0] / len(df_hombres[df_hombres.acompaniantes == 0]) * 100}')
-print(f'Porcentaje de hombres que fueron con un acompañante y declararon que volverian: {hombres_volverian_vc[1] / len(df_hombres[df_hombres.acompaniantes == 1]) * 100}')
-print(f'Porcentaje de hombres que fueron con dos acompañantes y declararon que volverian: {hombres_volverian_vc[2] / len(df_hombres[df_hombres.acompaniantes == 2]) * 100}')
+fig, axes = plt.subplots(nrows=1, ncols=2, dpi=100, figsize=(6.4 * 2, 4.8))
+acompaniantes = df.acompaniantes.unique().sort()
+fig.suptitle("Análisis de encuestados de género femenino según cantidad de acompañantes")
+
+sns.countplot(x="acompaniantes", hue="volveria", data=df[df.genero == 'mujer'], ax=axes[0], order=acompaniantes)
+axes[0].set_ylabel("Cantidad")
+axes[0].set_xlabel("Acompañantes")
+axes[0].set_title('Cantidad para cada número de acompañantes')
+ajustar_leyenda_columna_volveria(axes[0])
+
+
+sns.barplot(
+    data=df[df.genero == 'mujer'].groupby("acompaniantes")
+    .volveria.value_counts(normalize=True)
+    .rename("volveria_prop")
+    .mul(100)
+    .reset_index(),
+    x='acompaniantes',
+    y="volveria_prop",
+    hue='volveria',
+    ax=axes[1],
+    order=acompaniantes
+)
+axes[1].set_ylabel("Porcentaje (%)")
+axes[1].set_xlabel("Acompañantes")
+axes[1].set_title("Porcentaje para cada número de acompañantes")
+ajustar_leyenda_columna_volveria(axes[1])
+plt.show()
+
+# %%
+df_mujeres = df[df.genero == 'mujer']
+print("Cantidad de encuestadas mujeres por cantidad de acompañantes")
+display(df_mujeres.acompaniantes.value_counts())
+print(" ")
+print("Porcentaje de encuestadas mujeres por cantidad de acompañantes")
+display(df_mujeres.acompaniantes.value_counts().div(df_mujeres.pipe(len)).mul(100))
 
 # %% [markdown]
 # Pueden extraerse dos observaciones del resultado de este analisis:
-# - En el género masculino, la mayor diferencia entre respuestas positivas y negativas sobre si volverían a ver Frozen 4 se encuentra cuando declaran haber ido sin acompañantes. Luego, al aumentar el numero de acompañantes, se reduce la diferencia.
-# - En el género femenino el comportamiento es similar, con la diferencia que el mayor porcentaje es de respuestas positivas.
+# - En el género masculino, la mayor diferencia entre respuestas positivas y negativas sobre si volverían a ver Frozen 4 se encuentra cuando declaran haber ido sin acompañantes. Luego, al aumentar el número de acompañantes, se reduce la diferencia. Sin embargo, casi el 97% de los encuestados hombres se encuentran entre los que fueron con, a lo sumo, 2 acompañantes. Ademas, el 73% de los hombres fueron a ver Frozen 3 sin acompañantes.
+# - En el género femenino se mantiene constante el porcentaje de respuestas positivas, dandose el quiebre a partir de 4 acompañantes. Sin embargo, al igual que en los hombres, la cantidad de encuestados con un número de acompañantes mayor a 3 es muy pequeña. El 87% de las encuestadas fueron a ver Frozen 3 con a lo sumo 3 acompañantes.
 
 # %% [markdown]
 # Recordando lo visto en [el analisis de los acompañantes](#Columnas-parientes-y-amigos) se puede adjudicar este comportamiento a la diferencia en cantidad de encuestas respecto del número de acompañantes.
 
 
 # %% [markdown]
-# ### Relacionando Genero y Precio del ticket
-
-# %% [markdown]
-# En busqueda de una relación con mayor fuerza entre el genero y otros factores, se intentó relacionarlo con el precio pagado por la entrada:
+# ### Relacionando `genero`, `tipo_de_sala` y `nombre_sede`
 
 # %%
-figs, axes = plt.subplots(ncols=2, nrows=1, sharey=True, dpi=100)
-plt.suptitle("Distribución del precio de acuerdo a si vuelve o no en ambos generos")
-sns.boxplot(
-    data=df[(df.precio_ticket <= 30) & (df.genero == 'mujer')],
-    y="precio_ticket",
-    x="volveria",
-    ax=axes[0]
-
-)
-axes[0].set_ylabel("Precio del ticket")
-axes[0].set_title("Mujeres")
-
-sns.boxplot(
-    data=df[(df.precio_ticket <= 30) & (df.genero == 'hombre')],
-    y="precio_ticket",
-    x="volveria",
-    ax=axes[1]
-
-)
-axes[1].set_ylabel("Precio del ticket")
-axes[1].set_title("Hombres")
-plt.show()
-
-# %% [markdown]
-# # TODO revisar esto o sacarlo
-
-# %% [markdown]
-# ### Relacionando Genero, Tipo de Sala y Sede
-
-# %%
-fig, axes = plt.subplots(nrows=1, ncols=3, dpi=100, figsize=(6.4 * 2, 4.8), sharey=True)
-sedes = [sede.split('_')[1].capitalize() for sede in df_mujeres.nombre_sede.unique()]
-def graficar_por_genero_y_sede(genero, axes):
+def graficar_por_genero_y_sede(genero, titulo):
+    fig, axes = plt.subplots(nrows=1, ncols=3, dpi=100, figsize=(6.4 * 2, 4.8), sharey=True)
+    salas = df.tipo_de_sala.unique()
+    sedes = [sede.split('_')[1].capitalize() for sede in df.nombre_sede.dropna().unique()]
     df_genero = df[df.genero == genero].dropna()
     ax = 0
-    for sede in df_mujeres.nombre_sede.unique():
+    for sede in df_mujeres.nombre_sede.dropna().unique():
         df_sede = df_genero[df_genero.nombre_sede == sede]
-        sns.countplot(x="tipo_de_sala", hue="volveria", data=df_sede, ax=axes[ax])
+        sns.countplot(x="tipo_de_sala", hue="volveria", data=df_sede, ax=axes[ax], order=salas)
         axes[ax].set_ylabel("Cantidad")
         axes[ax].set_xlabel("Sede")
         axes[ax].set_title(sedes[ax])
         ajustar_leyenda_columna_volveria(axes[ax])
         ax += 1
-graficar_por_genero_y_sede('mujer', axes)
-fig.suptitle("Cantidad de mujeres encuestadas según tipo de sala y sede, y si volverian a ver Frozen 4")
-plt.show()
+    fig.suptitle(titulo)
+    plt.show()
 
-# %% [markdown]
-# Puede notarse en los gráficos que, en el género femenino, la respuesta negativa sobre si volvería a ver Frozen 4 aumenta cuando se trata de una sala 4d. Incluso supera a la respuesta positiva para la sede de Palermo específicamente.
 
 # %%
-fig, axes = plt.subplots(nrows=1, ncols=3, dpi=100, figsize=(6.4 * 2, 4.8), sharey=True)
-graficar_por_genero_y_sede('hombre', axes)
-fig.suptitle("Cantidad de hombres encuestados según tipo de sala y sede, y si volverian a ver Frozen 4")
-plt.show()
+graficar_por_genero_y_sede('mujer', 
+                           "Cantidad de mujeres encuestadas según tipo de sala y sede, y si volverian a ver Frozen 4")
 
 # %% [markdown]
-# Por otro lado, no puede extraerse una conclusion certera haciendo el mismo analisis sobre el genero masculino
+# Puede notarse en los gráficos que, en el género femenino, la proporción de respuesta negativa sobre si volvería a ver Frozen 4 aumenta cuando se trata de una sala 4d. Incluso supera a la de respuesta positiva para la sede de Palermo específicamente.
+
+# %%
+graficar_por_genero_y_sede('hombre', 
+                           "Cantidad de hombres encuestados según tipo de sala y sede, y si volverian a ver Frozen 4")
 
 # %% [markdown]
-# ### Relacionando tipo de sala y precio del ticket
+# Por otro lado, no puede extraerse ninguna conclusión nueva haciendo el mismo análisis sobre el género masculino.
 
 # %% [markdown]
-# En busca de ampliar la conclusión sobre el aumento de respuestas negativas en mujeres que fueron a salas 4d, se decidió relación el tipo de sala con el precio abonado:
+# ### Relacionando `tipo_de_sala` y `precio_ticket`
+
+# %% [markdown]
+# En busca de ampliar la conclusión sobre el aumento de respuestas negativas en mujeres que fueron a salas 4d, se buscó relacionar el tipo de sala con el precio abonado:
 
 # %%
 plt.figure(dpi=100)
-plt.title("Distribución del precio segun tipo de sala")
+plt.title("Distribución del precio según tipo de sala")
 sns.boxplot(
     data=df[df.precio_ticket <= 30],
     y="precio_ticket",
     x="tipo_de_sala",
 )
 plt.ylabel("Precio del ticket")
-plt.show()
-
-# %% [markdown]
-# Aqui se notó un resultado inesperado ya que, visto desde el sentido comun, se esperaba un rango de precio mas elevado para las salas 4d y 3d, respecto de la sala normal.
-
-# %% [markdown]
-# ### Relacionando Edad con Tipo de Sala
-
-# %% [markdown]
-# Se busca observar la influencia de la edad al elegir un tipo de sala. De este análisis podría extraerse una condición determinante a la hora de decidir si una persona volvería o no a ver Frozen 4.
-
-# %%
-plt.figure(dpi=100)
-plt.title("Distribución de la edad según tipo de sala")
-sns.boxplot(
-    data=df,
-    y="edad",
-    x="tipo_de_sala",
-)
-plt.ylabel("Edad")
 plt.xlabel("Tipo de Sala")
 plt.show()
 
 # %% [markdown]
-# Se divide el grafico anterior por género en busca de una mejor observación:
+# Aqui se notó un resultado inesperado ya que, visto desde el sentido común, se esperaba un rango de precio más elevado para las salas 4d y 3d, respecto de la sala normal.
+
+# %% [markdown]
+# ### Relacionando `edad` con `tipo_de_sala`
+
+# %% [markdown]
+# Se busca observar la influencia de la edad al elegir un tipo de sala de acuerdo al género.
 
 # %%
 fig, axes = plt.subplots(nrows=1, ncols=2, dpi=100, figsize=(6.4 * 2, 4.8), sharey=True)
@@ -718,23 +833,24 @@ axes[1].set_ylabel("Edad")
 axes[1].set_xlabel("Tipo de Sala")
 axes[1].set_title("Mujeres")
 
-fig.suptitle("Distribucion de la edad segun el tipo de sala")
+fig.suptitle("Distribución de la edad según el tipo de sala")
 plt.show()
 
 # %% [markdown]
 # No puede extraerse una conclusión del grafico resultante. El comportamiento es similar para ambos géneros y no se refleja en él alguna característica que influencie en la decisión de volver o no a ver Frozen 4.
 
 # %% [markdown]
-# ### Relacionando la Edad con la cantidad de Acompañantes
+# ### Relacionando la `edad` con `acompaniantes`
 
 # %% [markdown]
 # Se representa a continuación una distibucion de la cantidad promedio de acompañantes segun la edad, a modo de observacion:
 
 # %%
 plt.figure(dpi=150)
-sns.lineplot(
-    data=df, x='edad', y='acompaniantes', hue='volveria', estimator='mean'
-)
+sns.countplot(x="acompaniantes", hue="volveria", data=df[df.edad <= 15])
+plt.ylabel("Cantidad")
+plt.xlabel("Cantidad de acompañantes")
+plt.title("Cantidad de encuestados para cada cantidad de amigos")
 plt.show()
 
 # %% [markdown]
@@ -753,23 +869,12 @@ sns.lineplot(
 )
 plt.show()
 
-# %%
-plt.figure(dpi=150)
-sns.lineplot(
-    data=df, x='edad', y='parientes', hue='volveria', estimator='mean'
-)
-plt.show()
-
-# %%
-plt.figure(dpi=150)
-sns.lineplot(
-    data=df, x='edad', y='amigos', hue='volveria', estimator='mean'
-)
-plt.show()
-
 
 # %% [markdown]
 # ## Armado del baseline
+
+# %% [markdown]
+# A partir de lo analizado se armó el siguiente baseline. La columna más importante es el género, dado que si es hombre se estima que no volvería y, si es mujer, se verifica el tipo de sala y la sede para tomar la decisión.
 
 # %%
 def clasificar_encuestado(fila):
@@ -792,8 +897,17 @@ def baseline(X):
     return resultado
 
 
+# %% [markdown]
+# Se procede a verificar el accuracy obtenido usando la funcion `accuracy_score`de la libreria `sklearn`.
+
 # %%
 prediccion = baseline(df)
 
 # %%
 accuracy_score(df.volveria, prediccion)
+
+
+# %% [markdown]
+# Como se puede ver, el accuracy obtenido comple con los requisitos pedidos. 
+
+# %%
