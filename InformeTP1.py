@@ -231,7 +231,7 @@ print(f'Porcentaje de encuestados que fueron a Palermo y no volverían : { cuatr
 # %%
 fig, axes = plt.subplots(nrows=2, ncols=3, dpi=100, figsize=(6.4 * 3, 4.8 * 2 + 2), sharey='row')
 salas = df.tipo_de_sala.unique()
-
+fig.tight_layout(pad=5)
 #Palermo
 palermo = df[df["nombre_sede"] == "fiumark_palermo"] 
 sns.countplot(x="tipo_de_sala", hue="volveria", data=palermo, ax=axes[0][0], order=salas)
@@ -307,6 +307,7 @@ sns.barplot(
 axes[1][2].set_ylabel("Porcentaje (%)")
 axes[1][2].set_xlabel("Tipo de sala")
 axes[1][2].set_title("Quilmes - Porcentaje para cada sala")
+fig.suptitle("Análisis de encuestados para cada sede por tipo de sala y si volvería a ver Frozen 4")
 ajustar_leyenda_columna_volveria(axes[1][2])
 
 
@@ -412,7 +413,7 @@ plt.show()
 # Este gráfico confirma que la edad se distribuye de forma similar para ambas clases. Por si sóla no permite concluir algo respecto a si una persona volvería o no. 
 
 # %% [markdown]
-# ### Columna `precio`
+# ### Columna `precio_ticket`
 
 # %% [markdown]
 # De lo observado en el reporte de Pandas Profiling, se pudo definir que prácticamente todas las entradas tiene un valor menor o igual a 10 (el precio es un numero entero con valor mínimo 1 y máximo 50). Se analiza la distribución de los precios (de aquellas entradas con precio de ticket menor o igual a 10), de acuerdo a si vuelve o no.
@@ -491,9 +492,6 @@ print(f'Porcentaje de encuestados que van a lo sumo con un amigo: {(amigos_value
 
 # %% [markdown]
 # Se repite el análisis para la columna `parientes`:
-
-# %%
-df.parientes.value_counts()
 
 # %%
 fig, axes = plt.subplots(ncols=2, nrows=1, dpi=100, figsize=(6.4 * 2, 4.8))
@@ -754,25 +752,70 @@ display(df_mujeres.acompaniantes.value_counts().div(df_mujeres.pipe(len)).mul(10
 # - En el género femenino se mantiene constante el porcentaje de respuestas positivas, dandose el quiebre a partir de 4 acompañantes. Sin embargo, al igual que en los hombres, la cantidad de encuestados con un número de acompañantes mayor a 3 es muy pequeña. El 87% de las encuestadas fueron a ver Frozen 3 con a lo sumo 3 acompañantes.
 
 # %% [markdown]
-# Recordando lo visto en [el analisis de los acompañantes](#Columnas-parientes-y-amigos) se puede adjudicar este comportamiento a la diferencia en cantidad de encuestas respecto del número de acompañantes.
+# Recordando lo visto en [el análisis de los acompañantes](#Columnas-parientes-y-amigos) se puede adjudicar este comportamiento a la diferencia en cantidad de encuestas respecto del número de acompañantes.
 
 
 # %% [markdown]
 # ### Relacionando `genero`, `tipo_de_sala` y `nombre_sede`
 
+# %% [markdown]
+# Primero se analizan las tendencias para cada género de acuerdo al tipo de sala:
+
 # %%
-def graficar_por_genero_y_sede(genero, titulo):
-    fig, axes = plt.subplots(nrows=1, ncols=3, dpi=100, figsize=(6.4 * 2, 4.8), sharey=True)
+def graficar_por_genero(df, titulo):
+    fig, axes = plt.subplots(nrows=2, ncols=2, dpi=100, figsize=(6.4 * 2, 4.8 * 2), sharey='row')
+    fig.tight_layout(pad=5)
+    salas = df.tipo_de_sala.unique()
+    ax = 0
+    fig.suptitle(titulo)
+    for genero in df.genero.unique():
+        sns.countplot(x="tipo_de_sala", hue="volveria", data=df[df.genero == genero], ax=axes[0][ax], order=salas)
+        axes[0][ax].set_ylabel("Cantidad")
+        axes[0][ax].set_xlabel("Tipo de sala")
+        axes[0][ax].set_title(f"{genero.capitalize()} - Cantidad para cada sala")
+        ajustar_leyenda_columna_volveria(axes[0][ax])
+        
+        sns.barplot(
+            data=df[df.genero == genero].groupby("tipo_de_sala")
+            .volveria.value_counts(normalize=True)
+            .rename("volveria_prop")
+            .mul(100)
+            .reset_index(),
+            x='tipo_de_sala',
+            y="volveria_prop",
+            hue='volveria',
+            ax=axes[1][ax],
+            order=salas
+        )
+        axes[1][ax].set_ylabel("Porcentaje (%)")
+        axes[1][ax].set_xlabel("Tipo de sala")
+        axes[1][ax].set_title(f"{genero.capitalize()} - Porcentaje para cada sala")
+        ajustar_leyenda_columna_volveria(axes[1][ax])
+
+        ax += 1
+    plt.show()
+
+
+# %%
+graficar_por_genero(df, "Análisis de encuestados para cada género según tipo de sala y si volverian a ver Frozen 4")
+
+
+# %% [markdown]
+# Puede notarse en los gráficos que, en el género femenino, la proporción de respuesta negativa sobre si volvería a ver Frozen 4 aumenta cuando se trata de una sala 4d, incluso se equipara. Se procede a repetir este análisis pero diferenciando por sede:
+
+# %%
+def graficar_por_genero_y_sede(df, genero, titulo):
+    fig, axes = plt.subplots(nrows=1, ncols=3, dpi=100, figsize=(6.4 * 3, 4.8), sharey=True)
     salas = df.tipo_de_sala.unique()
     sedes = [sede.split('_')[1].capitalize() for sede in df.nombre_sede.dropna().unique()]
-    df_genero = df[df.genero == genero].dropna()
+    df_genero = df[df.genero == genero].dropna() #Porque dos entradas no tienen sede
     ax = 0
-    for sede in df_mujeres.nombre_sede.dropna().unique():
+    for sede in df_genero.nombre_sede.dropna().unique():
         df_sede = df_genero[df_genero.nombre_sede == sede]
         sns.countplot(x="tipo_de_sala", hue="volveria", data=df_sede, ax=axes[ax], order=salas)
         axes[ax].set_ylabel("Cantidad")
-        axes[ax].set_xlabel("Sede")
-        axes[ax].set_title(sedes[ax])
+        axes[ax].set_xlabel("Tipo de sala")
+        axes[ax].set_title(sede.split("_")[1].capitalize())
         ajustar_leyenda_columna_volveria(axes[ax])
         ax += 1
     fig.suptitle(titulo)
@@ -780,18 +823,20 @@ def graficar_por_genero_y_sede(genero, titulo):
 
 
 # %%
-graficar_por_genero_y_sede('mujer', 
+graficar_por_genero_y_sede(df,
+                           'mujer', 
                            "Cantidad de mujeres encuestadas según tipo de sala y sede, y si volverian a ver Frozen 4")
 
 # %% [markdown]
-# Puede notarse en los gráficos que, en el género femenino, la proporción de respuesta negativa sobre si volvería a ver Frozen 4 aumenta cuando se trata de una sala 4d. Incluso supera a la de respuesta positiva para la sede de Palermo específicamente.
+# Se observa como en la sede de Palermo hay una mayor proporción de mujeres que optan por no volver, mostrando un comportamiento diferente que en los demás tipo de salas e incluso sedes.
 
 # %%
-graficar_por_genero_y_sede('hombre', 
+graficar_por_genero_y_sede(df,
+                           'hombre', 
                            "Cantidad de hombres encuestados según tipo de sala y sede, y si volverian a ver Frozen 4")
 
 # %% [markdown]
-# Por otro lado, no puede extraerse ninguna conclusión nueva haciendo el mismo análisis sobre el género masculino.
+# Por otro lado, no puede extraerse ninguna conclusión nueva haciendo el mismo análisis sobre el género masculino. 
 
 # %% [markdown]
 # ### Relacionando `tipo_de_sala` y `precio_ticket`
@@ -812,7 +857,7 @@ plt.xlabel("Tipo de Sala")
 plt.show()
 
 # %% [markdown]
-# Aqui se notó un resultado inesperado ya que, visto desde el sentido común, se esperaba un rango de precio más elevado para las salas 4d y 3d, respecto de la sala normal.
+# Aqui se notó un resultado inesperado ya que, visto desde el sentido común, se esperaba un rango de precio más elevado para las salas 4d y 3d respecto de la sala normal.
 
 # %% [markdown]
 # ### Relacionando `edad` con `tipo_de_sala`
@@ -833,59 +878,56 @@ axes[1].set_ylabel("Edad")
 axes[1].set_xlabel("Tipo de Sala")
 axes[1].set_title("Mujeres")
 
-fig.suptitle("Distribución de la edad según el tipo de sala")
+fig.suptitle("Distribución de la edad según el tipo de sala y género")
 plt.show()
 
 # %% [markdown]
-# No puede extraerse una conclusión del grafico resultante. El comportamiento es similar para ambos géneros y no se refleja en él alguna característica que influencie en la decisión de volver o no a ver Frozen 4.
+# No puede extraerse una conclusión del gráfico resultante. El comportamiento es similar para ambos géneros y no se refleja en él alguna característica que influencie en la decisión de volver o no a ver Frozen 4.
 
 # %% [markdown]
 # ### Relacionando la `edad` con `acompaniantes`
 
 # %% [markdown]
-# Se representa a continuación una distibucion de la cantidad promedio de acompañantes segun la edad, a modo de observacion:
+# Se analiza la cantidad de acompañantes con las que van los menores de edad:
 
 # %%
+menores_de_edad = df[df.edad < 18]
 plt.figure(dpi=150)
-sns.countplot(x="acompaniantes", hue="volveria", data=df[df.edad <= 15])
+sns.countplot(x="acompaniantes", hue="volveria", data=menores_de_edad)
 plt.ylabel("Cantidad")
-plt.xlabel("Cantidad de acompañantes")
-plt.title("Cantidad de encuestados para cada cantidad de amigos")
+plt.xlabel("Acompañantes")
+plt.title("Cantidad de encuestados para cada número de acompañantes")
 plt.show()
-
-# %% [markdown]
-# Si bien no es la mejor forma de graficarlo, se puede ver una relación entre la edad y los acompañantes respecto de si volveria (Agregue la condicion al baseline y suma un 1% creo. Pero tengo miedo que sea muy overfitting
-
-# %% [markdown]
-# # TODO ver esto de arriba
-
-# %% [markdown]
-# Pruebo lo mismo con precio tickey y edad
 
 # %%
-plt.figure(dpi=150)
-sns.lineplot(
-    data=df, x='edad', y='precio_ticket', hue='volveria', estimator='mean'
-)
-plt.show()
+print(f"Cantidad de encuestados menores de edad: {len(menores_de_edad)}")
+print(f"Porcentaje de encuestados menores de edad: {len(menores_de_edad) / len(df) * 100}")
 
+
+# %% [markdown]
+# Si bien no es la mejor forma de graficarlo, se puede observar que son extremadamente pocos (4 encuestados) los menores que van solos al cine, lo cual se condice con lo que se ve normalmente. A su vez, para una cantidad de acompañantes menor o igual a 3 la gran mayoría decide volver a ver Frozen 4, mientras que prácticamente todos los que van con 4 o más optan por lo contrario. Sin embargo, el porcentaje de encuestados menores de edad es muy bajo (8%). Tomar una decisión para una muestra tan pequeña podría llegar a provocar que el baseline sobreajuste al dataset.
 
 # %% [markdown]
 # ## Armado del baseline
 
 # %% [markdown]
-# A partir de lo analizado se armó el siguiente baseline. La columna más importante es el género, dado que si es hombre se estima que no volvería y, si es mujer, se verifica el tipo de sala y la sede para tomar la decisión.
+# A partir del análisis realizado, se concluyó que la columna más importante para definir si una persona volvería a ver Frozen 4 en el mismo cine es el género, seguida del tipo de sala. Como se explicó anteriormente, aproximadamente el 80% de los hombres encuestados respondió que no volvería, mientras que el 70% de las mujeres dijo que sí lo haría. Si se clasificase a todos los hombres como que no volverían y a las mujeres como que sí volverían, se obtendría un accuracy superior al 70%. 
+#
+# A su vez, en el caso de las mujeres, se observó que para la sede de Palermo la mayoría de las que iba a la sala 4d optaba por no volver. Para los demás tipos de sala y sede esto no ocurría, la gran mayoría elegía volver. Se puede aprovechar esta diferencia de comportamiento en salas 4d de la sede de Palermo para mejorar la clasificación de las mujeres encuestadas.
+#
+# Otra condición interesante encontrada fue que prácticamente todos los menores de edad que fueron al cine con 3 o menos acompañantes deciden volver, ocurriendo lo contrario con los que acuedieron con más de 3 acompañantes.
+#
+# A partir de estas consideraciones se construyó el siguiente baseline:
 
 # %%
 def clasificar_encuestado(fila):
-    if fila['edad'] < 20 and fila['parientes'] + fila['amigos'] <= 3:
-        return 1
+    if fila['edad'] < 18:
+        acompaniantes = fila['parientes'] + fila['amigos']
+        return 1 if acompaniantes <= 3 else 0
     if fila['genero'] == 'hombre':
         return 0
     if fila['tipo_de_sala'] == '4d' and fila['nombre_sede'] == 'fiumark_palermo':
         return 0
-    #if fila['parientes'] + fila['amigos'] > 3:
-     #   return 0
     return 1
 
 
@@ -909,5 +951,3 @@ accuracy_score(df.volveria, prediccion)
 
 # %% [markdown]
 # Como se puede ver, el accuracy obtenido comple con los requisitos pedidos. 
-
-# %%
