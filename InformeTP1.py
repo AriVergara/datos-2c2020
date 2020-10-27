@@ -805,22 +805,41 @@ graficar_por_genero(df, "Análisis de encuestados para cada género según tipo 
 
 # %%
 def graficar_por_genero_y_sede(df, genero, titulo):
-    fig, axes = plt.subplots(nrows=1, ncols=3, dpi=100, figsize=(6.4 * 3, 4.8), sharey=True)
+    fig, axes = plt.subplots(nrows=2, ncols=3, dpi=150, figsize=(6.4 * 3, 4.8 * 2 + 2), sharey='row')
+    fig.tight_layout(pad=5)
     salas = df.tipo_de_sala.unique()
     sedes = [sede.split('_')[1].capitalize() for sede in df.nombre_sede.dropna().unique()]
     df_genero = df[df.genero == genero].dropna() #Porque dos entradas no tienen sede
     ax = 0
     for sede in df_genero.nombre_sede.dropna().unique():
         df_sede = df_genero[df_genero.nombre_sede == sede]
-        sns.countplot(x="tipo_de_sala", hue="volveria", data=df_sede, ax=axes[ax], order=salas)
-        axes[ax].set_ylabel("Cantidad")
-        axes[ax].set_xlabel("Tipo de sala")
-        axes[ax].set_title(sede.split("_")[1].capitalize())
-        ajustar_leyenda_columna_volveria(axes[ax])
+        sns.countplot(x="tipo_de_sala", hue="volveria", data=df_sede, ax=axes[0][ax], order=salas)
+        axes[0][ax].set_ylabel("Cantidad")
+        axes[0][ax].set_xlabel("Tipo de sala")
+        axes[0][ax].set_title(f"{sede.split('_')[1].capitalize()} - Cantidad para cada sala")
+        ajustar_leyenda_columna_volveria(axes[0][ax])
+        
+        
+        sns.barplot(
+            data=df_sede.groupby("tipo_de_sala")
+            .volveria.value_counts(normalize=True)
+            .rename("volveria_prop")
+            .mul(100)
+            .reset_index(),
+            x='tipo_de_sala',
+            y="volveria_prop",
+            hue='volveria',
+            ax=axes[1][ax],
+            order=salas
+        )
+        axes[1][ax].set_ylabel("Porcentaje (%)")
+        axes[1][ax].set_xlabel("Tipo de sala")
+        axes[1][ax].set_title(f"{sede.split('_')[1].capitalize()} - Porcentaje para cada sala")
+        ajustar_leyenda_columna_volveria(axes[1][ax])
         ax += 1
+        
     fig.suptitle(titulo)
     plt.show()
-
 
 # %%
 graficar_por_genero_y_sede(df,
@@ -831,12 +850,25 @@ graficar_por_genero_y_sede(df,
 # Se observa como en la sede de Palermo hay una mayor proporción de mujeres que optan por no volver, mostrando un comportamiento diferente que en los demás tipo de salas e incluso sedes.
 
 # %%
+df_palermo_mujeres_4d = df[(df.nombre_sede == 'fiumark_palermo') & (df.genero == 'mujer') & (df.tipo_de_sala == '4d')]
+print("Cantidad de encuestadas mujeres que fueron a Palermo a sala 4D")
+display(df_palermo_mujeres_4d.volveria.value_counts())
+print(" ")
+print("Porcentaje de encuestadas mujeres que fueron a Palermo a sala 4D y volverían a ver Frozen 4")
+display(df_palermo_mujeres_4d.volveria.value_counts().div(df_palermo_mujeres_4d.pipe(len)).mul(100))
+
+# %%
 graficar_por_genero_y_sede(df,
                            'hombre', 
                            "Cantidad de hombres encuestados según tipo de sala y sede, y si volverian a ver Frozen 4")
 
+# %%
+df_hombres_4d = df[(df.genero == 'hombre') & (df.tipo_de_sala == 'normal')]
+print("Porcentaje de encuestados hombres que fueron a sala normal y volverían a ver Frozen 4")
+display(df_hombres_4d.volveria.value_counts().div(df_hombres_4d.pipe(len)).mul(100))
+
 # %% [markdown]
-# Por otro lado, no puede extraerse ninguna conclusión nueva haciendo el mismo análisis sobre el género masculino. 
+# Una observación que se hizo en este análisis es que para la sala normal, la proporción de hombres que volverían a ver Frozen 4 es mayor. Sin embargo, la cantidad de encuestados que entran dentro de esta categoria es muy poca, por lo tanto no aporta una condición solida para determinar si un hombre volvería o no.
 
 # %% [markdown]
 # ### Relacionando `tipo_de_sala` y `precio_ticket`
@@ -913,7 +945,7 @@ print(f"Porcentaje de encuestados menores de edad: {len(menores_de_edad) / len(d
 # %% [markdown]
 # A partir del análisis realizado, se concluyó que la columna más importante para definir si una persona volvería a ver Frozen 4 en el mismo cine es el género, seguida del tipo de sala. Como se explicó anteriormente, aproximadamente el 80% de los hombres encuestados respondió que no volvería, mientras que el 70% de las mujeres dijo que sí lo haría. Si se clasificase a todos los hombres como que no volverían y a las mujeres como que sí volverían, se obtendría un accuracy superior al 70%. 
 #
-# A su vez, en el caso de las mujeres, se observó que para la sede de Palermo la mayoría de las que iba a la sala 4d optaba por no volver. Para los demás tipos de sala y sede esto no ocurría, la gran mayoría elegía volver. Se puede aprovechar esta diferencia de comportamiento en salas 4d de la sede de Palermo para mejorar la clasificación de las mujeres encuestadas.
+# A su vez, en el caso de las mujeres, se observó que para la sede de Palermo la mayoría de las que iba a la sala 4d optaba por no volver (65%). Para los demás tipos de sala y sede esto no ocurría, la gran mayoría elegía volver. Se puede aprovechar esta diferencia de comportamiento en salas 4d de la sede de Palermo para mejorar la clasificación de las mujeres encuestadas. Por ello, se decidió utilizar una moneda cargada para este caso en partiular.
 #
 # Otra condición interesante encontrada fue que prácticamente todos los menores de edad que fueron al cine con 3 o menos acompañantes deciden volver, ocurriendo lo contrario con los que acuedieron con más de 3 acompañantes.
 #
@@ -927,7 +959,7 @@ def clasificar_encuestado(fila):
     if fila['genero'] == 'hombre':
         return 0
     if fila['tipo_de_sala'] == '4d' and fila['nombre_sede'] == 'fiumark_palermo':
-        return 0
+        return np.random.binomial(1, 0.35) #El 35% de las mujeres que concurren a esta sala en esta sede volverian a ver Frozen 4
     return 1
 
 
@@ -944,8 +976,6 @@ def baseline(X):
 
 # %%
 prediccion = baseline(df)
-
-# %%
 accuracy_score(df.volveria, prediccion)
 
 
