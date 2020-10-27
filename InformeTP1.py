@@ -373,7 +373,7 @@ df.edad.describe()
 # Se procede a visualizar la distribución de valores que tiene esta columna:
 
 # %%
-df_edad = df.dropna()
+df_edad = df.dropna(subset=["edad"])
 
 # %%
 fig, axes = plt.subplots(nrows=1, ncols=2, dpi=100, figsize=(6.4 * 2, 4.8), sharey=True)
@@ -617,12 +617,12 @@ fig.suptitle("Distribución de la edad en el género masculino")
 axes[0].hist(x="edad", data=df_hombres[df_hombres.volveria == 1], bins=20)
 axes[0].set_ylabel("Cantidad")
 axes[0].set_xlabel("Edad")
-axes[0].set_title("Escuestados que volverían a ver Frozen 4")
+axes[0].set_title("Encuestados que volverían a ver Frozen 4")
 
 axes[1].hist(x="edad", data=df_hombres[df_hombres.volveria == 0], bins=20)
 axes[1].set_ylabel("Cantidad")
 axes[1].set_xlabel("Edad")
-axes[1].set_title("Escuestados que no volverían a ver Frozen 4")
+axes[1].set_title("Encuestados que no volverían a ver Frozen 4")
 
 plt.show()
 
@@ -808,10 +808,10 @@ def graficar_por_genero_y_sede(df, genero, titulo):
     fig, axes = plt.subplots(nrows=2, ncols=3, dpi=150, figsize=(6.4 * 3, 4.8 * 2 + 2), sharey='row')
     fig.tight_layout(pad=5)
     salas = df.tipo_de_sala.unique()
-    sedes = [sede.split('_')[1].capitalize() for sede in df.nombre_sede.dropna().unique()]
-    df_genero = df[df.genero == genero].dropna() #Porque dos entradas no tienen sede
+    sedes = df.nombre_sede.dropna().unique()
+    df_genero = df[df.genero == genero].dropna(subset=["nombre_sede"]) #Porque dos entradas no tienen sede
     ax = 0
-    for sede in df_genero.nombre_sede.dropna().unique():
+    for sede in sedes:
         df_sede = df_genero[df_genero.nombre_sede == sede]
         sns.countplot(x="tipo_de_sala", hue="volveria", data=df_sede, ax=axes[0][ax], order=salas)
         axes[0][ax].set_ylabel("Cantidad")
@@ -868,7 +868,7 @@ print("Porcentaje de encuestados hombres que fueron a sala normal y volverían a
 display(df_hombres_4d.volveria.value_counts().div(df_hombres_4d.pipe(len)).mul(100))
 
 # %% [markdown]
-# Una observación que se hizo en este análisis es que para la sala normal, la proporción de hombres que volverían a ver Frozen 4 es mayor. Sin embargo, la cantidad de encuestados que entran dentro de esta categoria es muy poca, por lo tanto no aporta una condición solida para determinar si un hombre volvería o no.
+# Una observación que se hizo en este análisis es que, para la sala normal, la proporción de hombres que volverían a ver Frozen 4 es mayor. Sin embargo, la cantidad de encuestados que entran dentro de esta categoría es muy poca, por lo tanto no aporta una condición sólida para determinar si un hombre volvería o no.
 
 # %% [markdown]
 # ### Relacionando `tipo_de_sala` y `precio_ticket`
@@ -937,7 +937,7 @@ print(f"Porcentaje de encuestados menores de edad: {len(menores_de_edad) / len(d
 
 
 # %% [markdown]
-# Si bien no es la mejor forma de graficarlo, se puede observar que son extremadamente pocos (4 encuestados) los menores que van solos al cine, lo cual se condice con lo que se ve normalmente. A su vez, para una cantidad de acompañantes menor o igual a 3 la gran mayoría decide volver a ver Frozen 4, mientras que prácticamente todos los que van con 4 o más optan por lo contrario. Sin embargo, el porcentaje de encuestados menores de edad es muy bajo (8%). Tomar una decisión para una muestra tan pequeña podría llegar a provocar que el baseline sobreajuste al dataset.
+# Si bien no es la mejor forma de graficarlo, se puede observar que son extremadamente pocos (4 encuestados) los menores que van solos al cine, lo cual se condice con lo que se ve normalmente. A su vez, para una cantidad de acompañantes menor o igual a 3 la gran mayoría decide volver a ver Frozen 4, mientras que prácticamente todos los que van con 4 o más optan por lo contrario. Sin embargo, el porcentaje de encuestados menores de edad es muy bajo (8%). Tomar una decisión para una muestra tan pequeña podría llegar a provocar que el baseline sobreajuste al dataset. Además, como se dijo al comienzo del análisis, el 20% de las entradas del dataset no tienen la edad cargada.
 
 # %% [markdown]
 # ## Armado del baseline
