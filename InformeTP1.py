@@ -52,7 +52,7 @@ def ajustar_leyenda_columna_volveria(axes, loc=None):
 # El primer dataset contiene el `id_usuario`y el booleano `volveria`. 
 
 # %%
-df_volvera = pd.read_csv('tp-2020-2c-train-cols1.csv')
+df_volvera = pd.read_csv('https://drive.google.com/uc?export=download&id=1km-AEIMnWVGqMtK-W28n59hqS5Kufhd0')
 df_volvera.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
 df_volvera.head()
 
@@ -60,7 +60,7 @@ df_volvera.head()
 # El segundo dataset contiene el resto de los datos encuestados.
 
 # %%
-df_datos = pd.read_csv('tp-2020-2c-train-cols2.csv')
+df_datos = pd.read_csv('https://drive.google.com/uc?export=download&id=1i-KJ2lSvM7OQH0Yd59bX01VoZcq8Sglq')
 df_datos.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
 df_datos.head()
 
@@ -382,17 +382,17 @@ fig.suptitle("Distribución de la edad de los encuestados a lo largo del dataset
 axes[0].hist(x="edad", data=df_edad[df_edad.volveria == 1], bins=20)
 axes[0].set_ylabel("Cantidad")
 axes[0].set_xlabel("Edad")
-axes[0].set_title("Escuestados que volverían a ver Frozen 4")
+axes[0].set_title("Encuestados que volverían a ver Frozen 4")
 
 axes[1].hist(x="edad", data=df_edad[df_edad.volveria == 0], bins=20)
 axes[1].set_ylabel("Cantidad")
 axes[1].set_xlabel("Edad")
-axes[1].set_title("Escuestados que no volverían a ver Frozen 4")
+axes[1].set_title("Encuestados que no volverían a ver Frozen 4")
 
 plt.show()
 
 # %% [markdown]
-# Se puede ver que una gran cantidad del público encuestado se encuentra entre los 20 y 40 años aproximadamente, como se vió al comienzo de esta sección.
+# Se puede ver que una gran cantidad del público encuestado se encuentra entre los 20 y 40 años aproximadamente, como se vió al comienzo de esta sección. Por lo que el público infantil no es el predominante, como se creyó inicialmente.
 #
 # Considerando que hay mas encuestados que no volverían, podemos asumir que las distribuciones son similares. Esto se puede corroborar en el siguiente grafico:
 
@@ -436,6 +436,8 @@ plt.show()
 
 # %% [markdown]
 # Una hipótesis lógica sería pensar que las personas que pagaron un precio alto por las entradas no querrían volver. Sin embargo, se observa que la mayoría de las que deciden no volver son las que pagaron un precio menor. Esto podría estar relacionado con que lo más importante a la hora de querer volver al cine para ver una secuela es si uno disfruto la película y no el precio de la entrada (esta información no se encuentra en el dataset).
+#
+# El precio de la entrada no parece ser importante a la hora de clasificar a los encuestados.
 
 # %% [markdown]
 # ### Columnas `parientes` y `amigos`
@@ -609,8 +611,7 @@ print(f'Porcentaje de encuestados que van a lo sumo con dos acompañantes: {(aco
 
 # %%
 fig, axes = plt.subplots(nrows=1, ncols=2, dpi=100, figsize=(6.4 * 2, 4.8), sharey=True)
-df_hombres = df[df.genero == 'hombre']
-df_mujeres = df[df.genero == 'mujer']
+df_hombres = df_edad[df_edad.genero == 'hombre']
 fig.suptitle("Distribución de la edad en el género masculino")
 
 #Hombres
@@ -628,19 +629,19 @@ plt.show()
 
 # %%
 fig, axes = plt.subplots(nrows=1, ncols=2, dpi=100, figsize=(6.4 * 2, 4.8), sharey=True)
-df_mujeres = df[df.genero == 'mujer']
+df_mujeres = df_edad[df_edad.genero == 'mujer']
 fig.suptitle("Distribución de la edad en el género femenino")
 
 #Hombres
 axes[0].hist(x="edad", data=df_mujeres[df_mujeres.volveria == 1], bins=20)
 axes[0].set_ylabel("Cantidad")
 axes[0].set_xlabel("Edad")
-axes[0].set_title("Escuestadas que volverían a ver Frozen 4")
+axes[0].set_title("Encuestadas que volverían a ver Frozen 4")
 
 axes[1].hist(x="edad", data=df_mujeres[df_mujeres.volveria == 0], bins=20)
 axes[1].set_ylabel("Cantidad")
 axes[1].set_xlabel("Edad")
-axes[1].set_title("Escuestadas que no volverían a ver Frozen 4")
+axes[1].set_title("Encuestadas que no volverían a ver Frozen 4")
 plt.ylim(0,25)
 plt.show()
 
@@ -847,7 +848,7 @@ graficar_por_genero_y_sede(df,
                            "Cantidad de mujeres encuestadas según tipo de sala y sede, y si volverian a ver Frozen 4")
 
 # %% [markdown]
-# Se observa como en la sede de Palermo hay una mayor proporción de mujeres que optan por no volver, mostrando un comportamiento diferente que en los demás tipo de salas e incluso sedes.
+# Se observa como en la sede de Palermo hay una mayor proporción de mujeres que optan por no volver, mostrando un comportamiento diferente que en los demás tipo de salas e incluso sedes (además, en las otras sedes la cantidad de mujeres encuestadas es mucho menor).
 
 # %%
 df_palermo_mujeres_4d = df[(df.nombre_sede == 'fiumark_palermo') & (df.genero == 'mujer') & (df.tipo_de_sala == '4d')]
@@ -868,7 +869,7 @@ print("Porcentaje de encuestados hombres que fueron a sala normal y volverían a
 display(df_hombres_4d.volveria.value_counts().div(df_hombres_4d.pipe(len)).mul(100))
 
 # %% [markdown]
-# Una observación que se hizo en este análisis es que, para la sala normal, la proporción de hombres que volverían a ver Frozen 4 es mayor. Sin embargo, la cantidad de encuestados que entran dentro de esta categoría es muy poca, por lo tanto no aporta una condición sólida para determinar si un hombre volvería o no.
+# Una observación que se hizo en este análisis es que, para la sala normal, la proporción de hombres que volverían a ver Frozen 4 es mayor que para los demás tipos de sala. Sin embargo, la cantidad de encuestados que entran dentro de esta categoría es baja, por lo tanto no aporta una condición sólida para determinar si un hombre volvería o no.
 
 # %% [markdown]
 # ### Relacionando `tipo_de_sala` y `precio_ticket`
@@ -937,17 +938,19 @@ print(f"Porcentaje de encuestados menores de edad: {len(menores_de_edad) / len(d
 
 
 # %% [markdown]
-# Si bien no es la mejor forma de graficarlo, se puede observar que son extremadamente pocos (4 encuestados) los menores que van solos al cine, lo cual se condice con lo que se ve normalmente. A su vez, para una cantidad de acompañantes menor o igual a 3 la gran mayoría decide volver a ver Frozen 4, mientras que prácticamente todos los que van con 4 o más optan por lo contrario. Sin embargo, el porcentaje de encuestados menores de edad es muy bajo (8%). Tomar una decisión para una muestra tan pequeña podría llegar a provocar que el baseline sobreajuste al dataset. Además, como se dijo al comienzo del análisis, el 20% de las entradas del dataset no tienen la edad cargada.
+# Si bien no es la mejor forma de graficarlo, se puede observar que son extremadamente pocos (4 encuestados) los menores que van solos al cine, lo cual se condice con lo que se ve normalmente cuando uno va a ver una película. A su vez, para una cantidad de acompañantes menor o igual a 3 la gran mayoría decide volver a ver Frozen 4, mientras que prácticamente todos los que van con 4 o más optan por lo contrario. 
 
 # %% [markdown]
 # ## Armado del baseline
 
 # %% [markdown]
-# A partir del análisis realizado, se concluyó que la columna más importante para definir si una persona volvería a ver Frozen 4 en el mismo cine es el género, seguida del tipo de sala. Como se explicó anteriormente, aproximadamente el 80% de los hombres encuestados respondió que no volvería, mientras que el 70% de las mujeres dijo que sí lo haría. Si se clasificase a todos los hombres como que no volverían y a las mujeres como que sí volverían, se obtendría un accuracy superior al 70%. 
+# A partir del análisis realizado, se concluyó que la columna más importante para definir si una persona volvería a ver Frozen 4 en el mismo cine es el género. Como se explicó anteriormente, aproximadamente el 80% de los hombres encuestados respondió que no volvería, mientras que el 70% de las mujeres dijo que sí lo haría. Si se clasificase a todos los hombres como que no volverían y a las mujeres como que sí volverían, se obtendría un accuracy superior al 75%. 
 #
-# A su vez, en el caso de las mujeres, se observó que para la sede de Palermo la mayoría de las que iba a la sala 4d optaba por no volver (65%). Para los demás tipos de sala y sede esto no ocurría, la gran mayoría elegía volver. Se puede aprovechar esta diferencia de comportamiento en salas 4d de la sede de Palermo para mejorar la clasificación de las mujeres encuestadas. Por ello, se decidió utilizar una moneda cargada para este caso en partiular.
+# A su vez, en el caso de las mujeres, se observó que para la sede de Palermo la mayoría de las que iba a la sala 4d optaba por no volver (65%). Para los demás tipos de sala y sede esto no ocurría, la gran mayoría elegía volver. Se puede aprovechar esta diferencia de comportamiento en salas 4d de la sede de Palermo para mejorar la clasificación de las mujeres encuestadas. Por ello, se decidió utilizar una moneda cargada para este caso en particular.
 #
-# Otra condición interesante encontrada fue que prácticamente todos los menores de edad que fueron al cine con 3 o menos acompañantes deciden volver, ocurriendo lo contrario con los que acuedieron con más de 3 acompañantes.
+# Otra condición interesante encontrada fue que prácticamente todos los menores de edad que fueron al cine con 3 o menos acompañantes deciden volver, ocurriendo lo contrario con los que acudieron con más de 3 acompañantes. Sin embargo, el porcentaje de encuestados menores de edad es muy bajo (8%) y, como se dijo al comienzo del informe, el 20% de las entradas del dataset no tienen la edad cargada. Aún así, corriendo riesgo de un sobreajuste al dataset, se decidió utilizar esta condición en el baseline.
+#
+# Estas últimas dos condiciones tienen un peso mucho menor que la mencionada para el género, la mejora en la clasificación es muy pequeña en comparación a la obtenida al diferenciar entre hombres y mujeres.
 #
 # A partir de estas consideraciones se construyó el siguiente baseline:
 
@@ -980,4 +983,4 @@ accuracy_score(df.volveria, prediccion)
 
 
 # %% [markdown]
-# Como se puede ver, el accuracy obtenido comple con los requisitos pedidos. 
+# Como se puede ver, el accuracy obtenido cumple con los requisitos pedidos. 
