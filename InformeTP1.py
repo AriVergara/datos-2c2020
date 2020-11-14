@@ -150,6 +150,19 @@ plt.show()
 
 # Del gráfico puede extraerse otro comportamiento llamativo para su posterior análisis, la amplia mayoria de los encuestrados eligen la sede Parlermo, mientras que el tipo de sala preferida es la 4D. 
 
+# #### ¿Como se distribuye el precio pagado por los encuestados?
+
+plt.figure(dpi=150)
+plt.hist(x="precio_ticket", data=df, bins=50)
+plt.ylabel("Cantidad de encuestados")
+plt.xlabel("Precio del ticket")
+plt.title("Distribución del precio pagado por los encuestados")
+plt.show()
+
+print(f'Porcentaje de tickets con precio menor o igual a 10: {len(df[df.precio_ticket <= 10]) / len(df) * 100}')
+
+# Como se puede oberservar, casi el 95% de los encuestados pagaron un precio de hasta "10" por su entrada. Esto será motivo de analisis mas adelante, donde se buscará relación entre el precio pagado y la desición de los encuestados.
+
 # ## TODO: Ocultar esto, creo que con estos tres gráficos y el de los missings se da un buen panorama general.
 #
 # - La clase mayoritaria en el dataset es la que corresponde a las personas que no volverían a ver Frozen 4 (61,6% de los encuestados).
@@ -168,7 +181,7 @@ plt.show()
 
 plt.figure(dpi=150)
 sns.heatmap(df.isnull(), cbar=False, yticklabels=False, center=0.15)
-plt.title("Análisis de missing values")
+plt.title("Análisis de missing values en el dataset")
 plt.show()
 
 # ## TODO agregar cantdiad de missing values en filas
@@ -465,11 +478,9 @@ plt.show()
 
 # ### Columna `precio_ticket`
 
-# # TODO agregar grafico sobre precios en el analisis general
+# #### ¿Puede relacionarse el precio del ticket con la decisión de los encuestados?
 
-# De lo observado en el reporte de Pandas Profiling, se pudo definir que prácticamente todas las entradas tiene un valor menor o igual a 10 (el precio es un numero entero con valor mínimo 1 y máximo 50). Se analiza la distribución de los precios (de aquellas entradas con precio de ticket menor o igual a 10), de acuerdo a si vuelve o no.
-
-print(f'Porcentaje de tickets con precio menor o igual a 10: {len(df[df.precio_ticket <= 10]) / len(df) * 100}')
+# De lo observado en el reporte de [análisis general del dataset](#Análisis-general-del-dataset), se pudo definir que prácticamente todas las entradas tiene un valor menor o igual a 10 (el precio es un numero entero con valor mínimo 1 y máximo 50). Se analiza la distribución de los precios (de aquellas entradas con precio de ticket menor o igual a 10), de acuerdo a si vuelve o no.
 
 plt.figure(dpi=100)
 plt.title("Distribución del precio de acuerdo a si vuelve o no")
@@ -483,13 +494,38 @@ plt.xlabel("Volvería")
 plt.xticks([False, True], ["No", "Sí"])
 plt.show()
 
-# TODO: Analizar distribución de precios para ambas categorias con un histograma. Que pasa si nos quedamos con los precios 1 y 2? Tienen gran cantidad de Nos?
-
 # Una hipótesis lógica sería pensar que las personas que pagaron un precio alto por las entradas no querrían volver. Sin embargo, se observa que la mayoría de las que deciden no volver son las que pagaron un precio menor. Esto podría estar relacionado con que lo más importante a la hora de querer volver al cine para ver una secuela es si uno disfruto la película y no el precio de la entrada (esta información no se encuentra en el dataset).
-#
-# El precio de la entrada no parece ser importante a la hora de clasificar a los encuestados.
+
+# En base a este resultado surge la posibilidad de categorizar a quienes hayan pagado un precio bajo por su entrada en el grupo de respuestas negativas sobre volver a ver Frozen 4. Se relaciona a continuación la distribucion de precios para cada categoria.
+
+# +
+fig, axes = plt.subplots(nrows=1, ncols=2, dpi=100, figsize=(6.4 * 2, 4.8), sharey=True)
+fig.suptitle("Distribución del precio del ticket según si volvería o no")
+
+#Hombres
+axes[0].hist(x="precio_ticket", data=df[df.volveria == 1], bins=20)
+axes[0].set_ylabel("Cantidad")
+axes[0].set_xlabel("Precio del Ticket")
+axes[0].set_title("Encuestados que volverían a ver Frozen 4")
+
+axes[1].hist(x="precio_ticket", data=df[df.volveria == 0], bins=20)
+axes[1].set_ylabel("Cantidad")
+axes[1].set_xlabel("Precio del Ticket")
+axes[1].set_title("Encuestados que no volverían a ver Frozen 4")
+
+plt.show()
+# -
+
+precio_menor_a_dos_vc = df[df.precio_ticket <= 2].volveria.value_counts()
+print(f'Porcentaje de encuestados que pagaron precio menor o igual a "2" y no volverían: { precio_menor_a_dos_vc[0] / (precio_menor_a_dos_vc[0] + precio_menor_a_dos_vc[1]) * 100}')
+
+# Como resultado del análisis se descarta el posible uso de esta variable para determinar si una persona volvería o no a ver Frozen 4, ya que el porcentaje de personas que pagaron un precio menor o igual a "2" (72.3%) se asemeja al porcentaje de personas que contestaron que no volverían visto en el [análisis general del dataset](#Análisis-general-del-dataset). 
+
+# TODO: ~~Analizar distribución de precios para ambas categorias con un histograma. Que pasa si nos quedamos con los precios 1 y 2? Tienen gran cantidad de Nos?~~ Creo que ya estaria listo.
 
 # ### Columnas `parientes` y `amigos`
+
+# #### ¿Infiere la cantidad de parientes o amigos que los acmpañaron en la decisión de los encuestados?
 
 # Primero se analiza la columna `amigos`:
 
@@ -536,6 +572,8 @@ cantidad_de_encuestados = len(df)
 print(f'Porcentaje de encuestados que van a lo sumo con un amigo: {(amigos_value_counts[0] + amigos_value_counts[1]) / cantidad_de_encuestados * 100}')
 
 # El 69.5% de los encuestados fue sin ningún amigo y si se tiene en cuenta a lo sumo un amigo se alcanza el 91.8%. La cantidad de personas que va con solo un amigo presenta proporciones similares entre los que volverían y los que no.
+#
+# Por si sola, la cantidad de amigos con las que los encuestados concurrieron al cine no es suficiente para determinar si volverían a ver Frozen 4 o no. Más adelante se profundizará en esta categoria para encontrar una correlación más firme.
 
 # Se repite el análisis para la columna `parientes`:
 
@@ -579,9 +617,13 @@ display(df.parientes.value_counts().div(df.pipe(len)).mul(100))
 parientes_value_counts = df.parientes.value_counts()
 print(f'Porcentaje de encuestados que van a lo sumo con un pariente: {(parientes_value_counts[0] + parientes_value_counts[1]) / cantidad_de_encuestados * 100}')
 
-# Ocurre algo similar a la columna `amigos`, dado que el 75.7% fue sin ningún familiar y el 89.5% fue a lo sumo con un pariente. En este caso, la cantidad de encuestados que van con dos familiares es más cercana a los que van con uno. 
+# El 75.7% fue sin ningún familiar y el 89.5% fue a lo sumo con un pariente. En este caso, la cantidad de encuestados que van con dos familiares es más cercana a los que van con uno. 
+#
+# Ocurre algo similar a la columna `amigos`, dado que no se puede extraer una conclusión determinante de esta categoria.
 
-# Teniendo en cuenta estas cuestiones, se quiere analizar si los encuestados fueron acompañados o no, independientemente de si eran amigos o parientes. Para esto se agrega la columna `acompaniantes`, que consiste en sumar las columnas `parientes` y `amigos`.
+# #### ¿Cambia el análisis si se tiene en cuenta la cantidad de acompañantes independientemente de qué tipo sean?
+
+# Se quiere analizar si los encuestados fueron acompañados o no, independientemente de si eran amigos o parientes. Para esto se agrega la columna `acompaniantes`, que consiste en sumar las columnas `parientes` y `amigos`.
 
 df['acompaniantes'] = df.parientes + df.amigos 
 
@@ -623,8 +665,8 @@ print("Porcentaje de encuestados por cantidad de acompaniantes")
 display(df.acompaniantes.value_counts().div(df.pipe(len)).mul(100))
 
 acompaniantes_value_counts = df.acompaniantes.value_counts()
-print(f'Porcentaje de encuestados que van a lo sumo con un acompañante: {(acompaniantes_value_counts[0] + acompaniantes_value_counts[1]) / cantidad_de_encuestados * 100}')
-print(f'Porcentaje de encuestados que van a lo sumo con dos acompañantes: {(acompaniantes_value_counts[0] + acompaniantes_value_counts[1] + acompaniantes_value_counts[2]) / cantidad_de_encuestados * 100}')
+print(f'Porcentaje de encuestados que van a lo sumo con un acompañante: {(acompaniantes_value_counts[0] + acompaniantes_value_counts[1]) / len(df) * 100}')
+print(f'Porcentaje de encuestados que van a lo sumo con dos acompañantes: {(acompaniantes_value_counts[0] + acompaniantes_value_counts[1] + acompaniantes_value_counts[2]) / len(df) * 100}')
 
 # Al combinar la cantidad de amigos y parientes en una sola columna, no se observa un comportamiento diferente. Se puede destacar que para los encuestados que fueorn con entre uno y tres acompañantes, el porcentaje de aqullos que deciden volver es mayor. Sin embargo, estos representan sólo el 30% de la cantidad de encuestados en total. 
 #
