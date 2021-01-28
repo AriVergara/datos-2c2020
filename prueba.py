@@ -36,6 +36,7 @@ df.head()
 df = pp.borrar_columna_fila(df)
 df = pp.borrar_columna_nombre(df)
 df = pp.borrar_columna_id_ticket(df)
+df_copy = df.copy()
 df.head()
 
 # ### KNNImputer para las edades con missing values
@@ -55,5 +56,15 @@ df.head()
 df.drop(['edad'],axis=1, inplace=True)
 df = pp.redondear_edades(df, 'edad_knn')
 df.head()
+
+# ### KBinsDiscretizer sobre la edad
+
+df_copy.dropna(subset=['edad'], inplace=True)
+df_copy['edad_bins'] = pp.kbins_discretizer(df_copy, 'edad', 4)
+
+df_copy.reset_index(inplace=True)
+df_copy.head()
+
+
 
 

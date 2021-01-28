@@ -63,3 +63,10 @@ def knn_imputer(df):
     imputer = KNNImputer(n_neighbors=2, weights="uniform")
     df = pd.DataFrame(imputer.fit_transform(df), columns=df.columns)
     return df.add_suffix('_knn')['edad_knn']
+
+def kbins_discretizer(df, col, n_bins=4):
+	enc = KBinsDiscretizer(n_bins, encode='ordinal')
+
+	_df = df[[col]].dropna().reset_index(drop=True)
+	X_binned = enc.fit_transform(_df)
+	return X_binned.astype(int)
