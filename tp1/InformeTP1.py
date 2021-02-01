@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.6.0
+#       jupytext_version: 1.9.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -20,15 +20,13 @@
 # - Alejo Rodriguez, 99869
 # - Ariel Vergara, 97010
 
-# + jupyter={"source_hidden": true}
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import seaborn as sns
 from matplotlib import pyplot as plt
 from pandas_profiling import ProfileReport
-from sklearn.metrics import accuracy_score
-# -
+from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score
 
 sns.set()
 
@@ -57,28 +55,21 @@ def ajustar_leyenda_columna_volveria(axes, loc=None):
 
 # El primero contiene dos columnas, el `id_usuario`y el booleano `volveria`, siendo esta última la variable target. 
 
-# + jupyter={"source_hidden": true}
 df_volvera = pd.read_csv('https://drive.google.com/uc?export=download&id=1km-AEIMnWVGqMtK-W28n59hqS5Kufhd0')
 df_volvera.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
 df_volvera.head()
-# -
 
 # El segundo dataset contiene el resto de los datos encuestados.
 
-# + jupyter={"source_hidden": true}
 df_datos = pd.read_csv('https://drive.google.com/uc?export=download&id=1i-KJ2lSvM7OQH0Yd59bX01VoZcq8Sglq')
 df_datos.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
 df_datos.head()
-# -
 
 # Se cuenta con dos datasets diferentes, los cuales se pueden vincular mediante la columna `id_usuario`. Se procede con la unión de ambos.
 
-# + jupyter={"source_hidden": true}
 df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_usuario')
 
-# + jupyter={"source_hidden": true}
 df.head()
-# -
 
 # A partir de este nuevo dataset se procederá con el análisis, algunas preguntas interesantes a tratar de responder son:
 # - ¿Predomina el público infantil?
@@ -94,15 +85,11 @@ df.head()
 
 # Primero ser observan las variables que contienen *missing values*.
 
-# + jupyter={"source_hidden": true}
 df.info()
 
 
-# -
-
 # Existen solamente 3 columnas que presentan *missing values* y estas son: `fila`, `edad` y `nombre_sede`. Sin embargo esta última sólo presenta 2 entradas con valores nulos.
 
-# + jupyter={"source_hidden": true}
 def plotear_porcentaje_nulos(serie, titulo):
     cant_elementos = len(df)
     cant_nulos = serie.isnull().sum()
@@ -116,37 +103,25 @@ def plotear_porcentaje_nulos(serie, titulo):
     plt.show()
 
 
-# -
-
 # En vista de que las columnas `edad` y `fila` contienen una mayor cantidad de *missing values* se procede a graficar el porcentaje de entradas nulas para ambas.
 
-# + jupyter={"source_hidden": true}
 plotear_porcentaje_nulos(df.edad, "Porcentaje de entradas con edad nula")
-# -
 
 # Se puede que ver que la cantidad de *missing values* de la columna `edad` es del 20%, por lo cual se decidió mantener la columna e ignorar dichas entradas a la hora de visualizar información relacionada con la edad.
 
-# + jupyter={"source_hidden": true}
 plotear_porcentaje_nulos(df.fila, "Porcentaje de entradas con fila nula")
-# -
 
 # Dado que la columna `fila` presenta una gran cantidad de missing values (casi 80%), se optó por eliminarla del dataframe.
 
-# + jupyter={"source_hidden": true}
 df.drop(axis=1, columns=["fila"], inplace=True)
-# -
 
 # A su vez, todos los valores de la columna `nombre` son únicos, y al ser el nombre del encuestado no aporta información respecto a su decisión sobre volver a ver Frozen 4. Por ello, se decidió eliminar la columna del dataset para el análisis.
 
-# + jupyter={"source_hidden": true}
 df.drop(axis=1, columns=["nombre"], inplace=True)
-# -
 
 # También se observó que la columna `id_ticket` presenta entradas repetidas, pero considerando que los valores de `id_usuario` y `nombre` son únicos, estas repeticiones no aportan información para la decisión (el que más se repite lo hace 7 veces). Por ello se decidió eliminar la columna.
 
-# + jupyter={"source_hidden": true}
 df.drop(axis=1, columns=["id_ticket"], inplace=True)
-# -
 
 # #### ¿Predominan los encuestados que volverían a ver Frozen 4?
 
@@ -1195,6 +1170,12 @@ def baseline(X):
 prediccion = baseline(df)
 accuracy_score(df.volveria, prediccion)
 
+
+print(f"ROC-AUC Baseline: {roc_auc_score(df.volveria, prediccion)}")
+print(f"Accuracy Baseline: {accuracy_score(df.volveria, prediccion)}")
+print(f"Precision Baseline: {precision_score(df.volveria, prediccion)}")
+print(f"Recall Baseline: {recall_score(df.volveria, prediccion)}")
+print(f"F1 Score Baseline: {f1_score(df.volveria, prediccion)}")
 
 # Como se puede ver, el accuracy obtenido cumple con los requisitos pedidos. 
 
