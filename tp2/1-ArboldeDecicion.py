@@ -33,12 +33,13 @@ df_datos.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.colum
 df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_usuario')
 
 # ### Preprocesamiento
+# Con el metodo `procesamiento_arboles_discretizer` mejoran todas las metricas excepto `Precision`.
 
 X_train, X_test, y_train, y_test = pp.procesamiento_arboles(df)
 
 # ### Entrenamiento
 
-clf = tree.DecisionTreeClassifier(random_state=117, max_depth=5, min_samples_leaf=3)
+clf = tree.DecisionTreeClassifier(random_state=117, max_depth=5, min_samples_leaf=4)
 clf.fit(X_train, y_train)
 
 # +
@@ -59,12 +60,12 @@ min_samples_leafs = np.arange(1, 51)
 data_points = []
 for max_depth in max_depths:
     for min_samples_leaf in min_samples_leafs:
-        clf = tree.DecisionTreeClassifier(
+        clf_test = tree.DecisionTreeClassifier(
             max_depth=max_depth, min_samples_leaf=min_samples_leaf, random_state=117
         )
-        clf.fit(X_train, y_train)
+        clf_test.fit(X_train, y_train)
         data_points.append(
-            (max_depth, min_samples_leaf, accuracy_score(y_test, clf.predict(X_test)),)
+            (max_depth, min_samples_leaf, accuracy_score(y_test, clf_test.predict(X_test)),)
         )
 
 data_points = pd.DataFrame(

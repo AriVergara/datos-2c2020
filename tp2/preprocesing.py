@@ -17,11 +17,11 @@ def procesamiento_arboles(df):
     #Se procesa el titulo de cada encuestado para que lo utilice el 
     #knnimputer para calcular los missing values en la edad.
     df['titulo'] = df.nombre.str.split(expand=True).iloc[:,0]
-    df['edad_knn'] = knn_imputer(df)
     #Se borran columnas que no aportan datos significativos
     borrar_columna(df, 'fila', True)
     borrar_columna(df, 'nombre', True)
     borrar_columna(df, 'id_ticket', True)
+    df['edad_knn'] = knn_imputer(df)
     #Se encodean las columnas categoricas
     df = one_hot_encoding(df, 'nombre_sede')
     df = one_hot_encoding(df, 'genero')
@@ -48,13 +48,20 @@ def procesamiento_arboles_discretizer(df):
     df = one_hot_encoding(df, 'nombre_sede')
     df = one_hot_encoding(df, 'genero')
     df = one_hot_encoding(df, 'tipo_de_sala')
-    #Se dropea la edad con missing values y se redondean los valores de edad calculados
-    #df.drop(['edad'],axis=1, inplace=True)
+    
     #df = redondear_edades(df, 'edad_knn')
     df.dropna(subset=['edad'], inplace=True)
-    df['edad_bins'] = pp.kbins_discretizer(df_copy, 'edad', 4)
+    df['edad_bins'] = kbins_discretizer(df, 'edad', 10)
+    df.dropna(subset=['precio_ticket'], inplace=True)
+    df['precio_bins'] = kbins_discretizer(df, 'precio_ticket', 5)
+    df.reset_index(inplace=True)
+    #Se dropea la edad con missing values y se redondean los valores de edad calculados
+    df.drop(['edad'],axis=1, inplace=True)
+    df.drop(['precio_ticket'],axis=1, inplace=True)
+    df.drop(['index'],axis=1, inplace=True)
+    print(df.head())
     #Se dropean las columnas titulo e id_usuario que no son utiles
-    df.drop(columns=['titulo', 'id_usuario'], inplace=True)
+    df.drop(columns=['id_usuario'], inplace=True)
     return obtener_sets(df)
     
 #-------------- FUNCIONES AUXILIARES -----------------
