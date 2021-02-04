@@ -947,7 +947,6 @@ plt.show()
 
 # Primero se analizan las tendencias para cada género de acuerdo al tipo de sala:
 
-# + jupyter={"source_hidden": true}
 def graficar_por_genero(df, titulo):
     fig, axes = plt.subplots(nrows=2, ncols=2, dpi=100, figsize=(6.4 * 2, 4.8 * 2), sharey='row')
     fig.tight_layout(pad=5)
@@ -982,11 +981,8 @@ def graficar_por_genero(df, titulo):
     plt.show()
 
 
-# + jupyter={"source_hidden": true}
 graficar_por_genero(df, "Análisis de encuestados para cada género según tipo de sala y si volverian a ver Frozen 4")
 
-
-# -
 
 # Como se ve, la sala 4D es la más elegida entre los encuestados, esto corresponde a lo visto en el análisis general y no difiere su comportamiento al separalos por género.
 
@@ -994,7 +990,6 @@ graficar_por_genero(df, "Análisis de encuestados para cada género según tipo 
 
 # #### ¿Existe en el género femenino un comportamiento distintivo para algún tipo de sala o sede?
 
-# + jupyter={"source_hidden": true}
 def graficar_por_genero_y_sede(df, genero, titulo):
     fig, axes = plt.subplots(nrows=2, ncols=3, dpi=150, figsize=(6.4 * 3, 4.8 * 2 + 2), sharey='row')
     fig.tight_layout(pad=5)
@@ -1032,19 +1027,16 @@ def graficar_por_genero_y_sede(df, genero, titulo):
     fig.suptitle(titulo)
     plt.show()
 
-# + jupyter={"source_hidden": true}
 graficar_por_genero_y_sede(df,
                            'mujer', 
                            "Cantidad de mujeres encuestadas según tipo de sala y sede, y si volverian a ver Frozen 4")
 
-# + jupyter={"source_hidden": true}
 df_palermo_mujeres_4d = df[(df.nombre_sede == 'fiumark_palermo') & (df.genero == 'mujer') & (df.tipo_de_sala == '4d')]
 print("Cantidad de encuestadas mujeres que fueron a Palermo a sala 4D")
 display(df_palermo_mujeres_4d.volveria.value_counts())
 print(" ")
 print("Porcentaje de encuestadas mujeres que fueron a Palermo a sala 4D y volverían a ver Frozen 4")
 display(df_palermo_mujeres_4d.volveria.value_counts().div(df_palermo_mujeres_4d.pipe(len)).mul(100))
-# -
 
 # Se observa como en la sede de Palermo hay una mayor proporción de mujeres que optan por no volver, mostrando un comportamiento diferente que en los demás tipo de salas e incluso sedes (además, en las otras sedes la cantidad de mujeres encuestadas es mucho menor). Se puede aprovechar esta diferencia de comportamiento en salas 4d de la sede de Palermo para mejorar la clasificación de las mujeres encuestadas. Por ello, se decidió utilizar esta variable en el baseline desarrollado al final de este informe.
 

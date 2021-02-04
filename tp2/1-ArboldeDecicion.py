@@ -39,11 +39,13 @@ df.head()
 # ### Preprocesamiento
 # Con el metodo `procesamiento_arboles_discretizer` mejoran todas las metricas excepto `Precision`.
 
-X_train, X_test, y_train, y_test = pp.procesamiento_arboles_discretizer(df)
+X_train, X_test, y_train, y_test = pp.procesamiento_arboles(df)
+
+X_train.head()
 
 # ### Entrenamiento
 
-clf = tree.DecisionTreeClassifier(random_state=117, max_depth=5, min_samples_leaf=5)
+clf = tree.DecisionTreeClassifier(random_state=117, max_depth=4, min_samples_leaf=15)
 clf.fit(X_train, y_train)
 
 # +
