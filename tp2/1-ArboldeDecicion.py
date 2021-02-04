@@ -32,14 +32,18 @@ df_datos = pd.read_csv('https://drive.google.com/uc?export=download&id=1i-KJ2lSv
 df_datos.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
 df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_usuario')
 
+df.parientes.describe()
+
+df.head()
+
 # ### Preprocesamiento
 # Con el metodo `procesamiento_arboles_discretizer` mejoran todas las metricas excepto `Precision`.
 
-X_train, X_test, y_train, y_test = pp.procesamiento_arboles(df)
+X_train, X_test, y_train, y_test = pp.procesamiento_arboles_discretizer(df)
 
 # ### Entrenamiento
 
-clf = tree.DecisionTreeClassifier(random_state=117, max_depth=5, min_samples_leaf=4)
+clf = tree.DecisionTreeClassifier(random_state=117, max_depth=5, min_samples_leaf=5)
 clf.fit(X_train, y_train)
 
 # +
@@ -84,6 +88,7 @@ g = sns.heatmap(
 # ### Metricas
 
 y_pred = clf.predict(X_test)
+y_pred
 
 # ##### AUC-ROC
 

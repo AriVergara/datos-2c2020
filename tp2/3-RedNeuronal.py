@@ -14,6 +14,7 @@
 # ---
 
 import pandas as pd
+import keras
 import preprocesing as pp
 from sklearn import preprocessing, tree
 import dtreeviz.trees as dtreeviz
@@ -21,9 +22,11 @@ import numpy as np
 from ipywidgets import Button, IntSlider, interactive
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score
-from sklearn.ensemble import RandomForestClassifier
 import seaborn as sns
 import matplotlib.pyplot as plt
+from keras.models import Sequential
+from keras.layers import Dense, Dropout
+from keras.models import load_model
 
 # ### Carga de Datasets
 
@@ -33,18 +36,48 @@ df_datos = pd.read_csv('https://drive.google.com/uc?export=download&id=1i-KJ2lSv
 df_datos.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
 df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_usuario')
 
+df.tipo_de_sala == '4d'
+
+np.where(df.genero == 'mujer' & df.tipo_de_sala == '4d')
+
 # ### Preprocesamiento
 
-X_train, X_test, y_train, y_test = pp.procesamiento_arboles_discretizer(df)
+X_train, X_test, y_train, y_test = pp.procesamiento_arboles(df)
+
+X_train.describe()
 
 # ### Entrenamiento
 
-model_rfr = RandomForestClassifier(max_depth=5, min_samples_leaf=3)
-model_rfr.fit(X_train, y_train)
+model = Sequential()
+model.add(Dense(8, input_shape=(15,), activation='tanh'))
+model.add(Dense(4, activation='tanh'))
+model.add(Dense(2, activation="softmax"))
+
+opt = keras.optimizers.RMSprop(lr=0.001)
+#opt = keras.optimizers.SGD(learning_rate=0.01)
+#opt = keras.optimizers.Adam(learning_rate=0.01)
+model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
+model.summary()
+
+y_train = keras.utils.to_categorical(y_train, 2)
+y_test = keras.utils.to_categorical(y_test, 2)
+
+X_train.values.shape
+
+history = model.fit(
+    X_train.values, y_train, epochs=600, validation_data=(X_test.values, y_test), verbose=0
+)
+
+fig = plt.figure(figsize=(12, 6), dpi=100)
+plt.ylabel("Accuracy")
+plt.xlabel("epoc")
+plt.plot(history.history["accuracy"], label="training")
+plt.plot(history.history["val_accuracy"], label="validation")
+plt.legend()
 
 # ### Metricas
 
-y_pred = model_rfr.predict(X_test)
+y_pred = model.predict(X_test)
 
 # ##### AUC-ROC
 

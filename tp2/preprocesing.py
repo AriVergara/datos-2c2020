@@ -14,6 +14,7 @@ from sklearn.preprocessing import (
 def procesamiento_arboles(df):
     #Se indica que columnas tenian edad nula
     df['edad_nan'] = np.where(df['edad'].isnull(), 1, 0)
+    df['mujer_4d_palermo'] = np.where(df['genero'] == 'mujer' and df['tipo_de_sala'] == '4d' and df['nombre_sede'] == 'fiumark_palermo', 1, 0)
     #Se procesa el titulo de cada encuestado para que lo utilice el 
     #knnimputer para calcular los missing values en la edad.
     df['titulo'] = df.nombre.str.split(expand=True).iloc[:,0]
@@ -26,11 +27,13 @@ def procesamiento_arboles(df):
     df = one_hot_encoding(df, 'nombre_sede')
     df = one_hot_encoding(df, 'genero')
     df = one_hot_encoding(df, 'tipo_de_sala')
+    df = one_hot_encoding(df, 'titulo')
     #Se dropea la edad con missing values y se redondean los valores de edad calculados
     df.drop(['edad'],axis=1, inplace=True)
+    df.drop(['precio_ticket'],axis=1, inplace=True)
     df = redondear_edades(df, 'edad_knn')
     #Se dropean las columnas titulo e id_usuario que no son utiles
-    df.drop(columns=['titulo', 'id_usuario'], inplace=True)
+    df.drop(columns=['id_usuario'], inplace=True)
     return obtener_sets(df)
 
 def procesamiento_arboles_discretizer(df):
@@ -48,7 +51,6 @@ def procesamiento_arboles_discretizer(df):
     df = one_hot_encoding(df, 'nombre_sede')
     df = one_hot_encoding(df, 'genero')
     df = one_hot_encoding(df, 'tipo_de_sala')
-    
     #df = redondear_edades(df, 'edad_knn')
     df.dropna(subset=['edad'], inplace=True)
     df['edad_bins'] = kbins_discretizer(df, 'edad', 10)
@@ -57,7 +59,7 @@ def procesamiento_arboles_discretizer(df):
     df.reset_index(inplace=True)
     #Se dropea la edad con missing values y se redondean los valores de edad calculados
     df.drop(['edad'],axis=1, inplace=True)
-    df.drop(['precio_ticket'],axis=1, inplace=True)
+    #df.drop(['precio_ticket'],axis=1, inplace=True)
     df.drop(['index'],axis=1, inplace=True)
     print(df.head())
     #Se dropean las columnas titulo e id_usuario que no son utiles
@@ -69,7 +71,7 @@ def procesamiento_arboles_discretizer(df):
 def obtener_sets(df):
     X = df.drop(columns=['volveria'])
     y = df.volveria
-    return train_test_split(X, y, test_size=0.2, random_state=0)
+    return train_test_split(X, y, test_size=0.2, random_state=0, stratify=y)
     
 def borrar_columna(df, columna, ip=False):
     if ip:
