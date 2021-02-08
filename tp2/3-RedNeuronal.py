@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.9.1
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -40,23 +40,21 @@ df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_
 
 
 
+
+
 from sklearn.ensemble import ExtraTreesClassifier
-
-clf = ExtraTreesClassifier(n_estimators=50)
-clf = clf.fit(X, y)
-
-
-
-# ### Preprocesamiento
-
-X_train, X_test, y_train, y_test = pp.procesamiento_arboles(df)
-
 clf = ExtraTreesClassifier(n_estimators=50)
 clf = clf.fit(X_train, y_train)
 
 X_train.columns
 
 clf.feature_importances_
+
+
+
+# ### Preprocesamiento
+
+X_train, X_test, y_train, y_test = pp.procesamiento_arboles(df)
 
 
 

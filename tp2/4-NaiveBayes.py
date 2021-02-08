@@ -29,16 +29,56 @@ df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_
 
 # ### Preprocesamiento
 
-X_train, X_test, y_train, y_test = pp.procesamiento_arboles(df)
+# +
+#y_train = df.volveria
+#X_train = pp.procesamiento_arboles(df.drop('volveria', axis=1, inplace=False))
+# -
+
+y = df.volveria
+X = pp.procesamiento_arboles(df.drop('volveria', axis=1, inplace=False))
+X_train, y_train, X_test, y_train = train_test_split(X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y)
+
+X_train.head()
+
+y_train.head()
+
+# ### Modelo
+
+model = CategoricalNB()
+
+# ### Métricas CV
+
+cv = StratifiedKFold(n_splits=8, random_state=RANDOM_STATE, shuffle=True)
+scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
+scores_for_model = cross_validate(model, X_train, y_train, cv=cv, scoring=scoring_metrics)
+
+# ##### AUC-ROC
+
+round(scores_for_model['test_roc_auc'].mean(), 3)
+
+# ##### Accuracy
+
+round(scores_for_model['test_accuracy'].mean(), 3)
+
+# ##### Precision
+
+round(scores_for_model['test_precision'].mean(), 3)
+
+# ##### Recall
+
+round(scores_for_model['test_recall'].mean(), 3)
+
+# ##### F1 Score
+
+round(scores_for_model['test_f1'].mean(), 3)
 
 # ### Entrenamiento
 
-gnb = CategoricalNB()
-gnb.fit(X_train, y_train)
+model.fit(X_train, y_train)
 
-# ### Metricas
+# ### Métricas holdout
 
-y_pred = gnb.predict(X_test)
+y_pred = model.predict(X_test)
 
 # ##### AUC-ROC
 
@@ -46,19 +86,19 @@ round(roc_auc_score(y_test, y_pred), 3)
 
 # ##### Accuracy
 
-round(accuracy_score(y_test, y_pred), 2)
+round(accuracy_score(y_test, y_pred), 3)
 
 # ##### Precision
 
-round(precision_score(y_test, y_pred), 2)
+round(precision_score(y_test, y_pred), 3)
 
 # ##### Recall
 
-round(recall_score(y_test, y_pred), 2)
+round(recall_score(y_test, y_pred), 3)
 
 # ##### F1 Score
 
-round(f1_score(y_test, y_pred), 2)
+round(f1_score(y_test, y_pred), 3)
 
 # ### Predicción
 
@@ -66,4 +106,6 @@ df_predecir = pd.read_csv('https://drive.google.com/uc?export=download&id=1I980-
 
 df_predecir.head()
 
+y_pred = model.predict(pp.procesamiento_arboles(df_predecir))
 
+y_pred

@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.9.1
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -125,7 +125,6 @@ df.drop(axis=1, columns=["id_ticket"], inplace=True)
 
 # #### ¿Predominan los encuestados que volverían a ver Frozen 4?
 
-# + jupyter={"source_hidden": true}
 plt.figure(dpi=150)
 sns.barplot(
     data=df.volveria.value_counts(normalize=True)
@@ -140,13 +139,11 @@ plt.ylabel("Porcentaje de encuestados")
 plt.xlabel("Volvería")
 plt.title("Porcentaje de encuestados según si volverían o no a ver Frozen 4")
 plt.show()
-# -
 
 # Como puede observarse, la mayoria de los encuestados (61,6%) responde negativo ante la pregunta sobre si volvería a ver o no Frozen 4.
 
 # #### ¿Cómo se distribuye el género entre los encuestados?
 
-# + jupyter={"source_hidden": true}
 plt.figure(dpi=150)
 sns.barplot(
     data=df.genero.value_counts(normalize=True)
@@ -160,15 +157,12 @@ plt.ylabel("Porcentaje de encuestados")
 plt.xlabel("Género")
 plt.title("Porcentaje de encuestados según género")
 plt.show()
-# -
 
 # En esta ocasión se observa una cantidad mayoritaria de hombres encuestados. Esta diferencia fue destacada como motivo de análisis y se desarrollará en profundidad más adelante.
 
 # #### ¿Como se distribuye la edad de los encuestados?
 
-# + jupyter={"source_hidden": true}
 df.edad.describe()
-# -
 
 # Las edades son valores de tipo float (el mínimo es 3.42). Inicialmente se esperaban que fueran de tipo entero, pero la edad no es un valor discreto, ya que se pueden contar tanto los meses como los días además de los años. A su vez, existen registros de encuestas en donde no se indica la edad.
 
@@ -490,7 +484,7 @@ ajustar_leyenda_columna_volveria(axes[1][2])
 
 # Se aplica el mismo análisis inicial que para las columnas anteriores.
 
-# + jupyter={"source_hidden": true}
+# +
 fig, axes = plt.subplots(nrows=1, ncols=2, dpi=100, figsize=(6.4 * 2, 4.8))
 generos = df.genero.unique()
 fig.suptitle("Análisis de encuestados según el género y si volvería a ver Frozen 4")
