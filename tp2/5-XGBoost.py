@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
+#     formats: ipynb,py:light
 #     text_representation:
 #       extension: .py
 #       format_name: light
@@ -17,7 +17,7 @@ import pandas as pd
 import preprocesing as pp
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score
-from sklearn.naive_bayes import CategoricalNB
+import xgboost as xgb
 
 # ### Carga de Datasets
 
@@ -33,12 +33,22 @@ X_train, X_test, y_train, y_test = pp.procesamiento_arboles(df)
 
 # ### Entrenamiento
 
-gnb = CategoricalNB()
-gnb.fit(X_train, y_train)
+# +
+#train_matrix = xgb.DMatrix(X_train, label=y_train)
+#test_matrix = xgb.DMatrix(X_test, label=y_test)
+#eval_list = [(test_matrix, "eval"), (train_matrix, "train")]
+#num_rounds = 10
+#params = {'eval_metric': 'auc'}
+#model = xgb.train(params, train_matrix, num_rounds, eval_list)
+#y_pred = model.predict(test_matrix)
+# -
+
+model = xgb.XGBClassifier(objective='binary:logistic', )
+model.fit(X_train, y_train)
 
 # ### Metricas
 
-y_pred = gnb.predict(X_test)
+y_pred = model.predict(X_test)
 
 # ##### AUC-ROC
 
@@ -59,11 +69,5 @@ round(recall_score(y_test, y_pred), 2)
 # ##### F1 Score
 
 round(f1_score(y_test, y_pred), 2)
-
-# ### Predicción
-
-df_predecir = pd.read_csv('https://drive.google.com/uc?export=download&id=1I980-_K9iOucJO26SG5_M8RELOQ5VB6A')
-
-df_predecir.head()
 
 

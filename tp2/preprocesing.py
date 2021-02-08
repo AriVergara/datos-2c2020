@@ -9,8 +9,8 @@ from sklearn.preprocessing import (
     OneHotEncoder
 )
 
-#--------- FUNCIONES DE PREPROCESAMIENTO ------------
-        
+# --------- FUNCIONES DE PREPROCESAMIENTO ------------
+
 def procesamiento_arboles(df):
     #Se indica que columnas tenian edad nula
     df['edad_nan'] = np.where(df['edad'].isnull(), 1, 0)
@@ -67,14 +67,14 @@ def procesamiento_arboles_discretizer(df):
     #Se dropean las columnas titulo e id_usuario que no son utiles
     df.drop(columns=['id_usuario'], inplace=True)
     return obtener_sets(df)
-    
-#-------------- FUNCIONES AUXILIARES -----------------
-    
+
+# -------------- FUNCIONES AUXILIARES -----------------
+
 def obtener_sets(df):
     X = df.drop(columns=['volveria'])
     y = df.volveria
     return train_test_split(X, y, test_size=0.2, random_state=0, stratify=y)
-    
+
 def borrar_columna(df, columna, ip=False):
     if ip:
         df.drop(axis=1, columns=[columna], inplace=ip)
