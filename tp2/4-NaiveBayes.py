@@ -15,7 +15,7 @@
 
 import pandas as pd
 import preprocesing as pp
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedKFold, cross_validate
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score
 from sklearn.naive_bayes import CategoricalNB
 
@@ -36,7 +36,7 @@ df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_
 
 y = df.volveria
 X = pp.procesamiento_arboles(df.drop('volveria', axis=1, inplace=False))
-X_train, y_train, X_test, y_train = train_test_split(X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=pp.TEST_SIZE, random_state=pp.RANDOM_STATE, stratify=y)
 
 X_train.head()
 
@@ -48,7 +48,7 @@ model = CategoricalNB()
 
 # ### Métricas CV
 
-cv = StratifiedKFold(n_splits=8, random_state=RANDOM_STATE, shuffle=True)
+cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
 scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
 scores_for_model = cross_validate(model, X_train, y_train, cv=cv, scoring=scoring_metrics)
 

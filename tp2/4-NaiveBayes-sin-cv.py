@@ -14,7 +14,7 @@
 # ---
 
 import pandas as pd
-import preprocesing as pp
+import preprocesing_viejo as pp
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score
 from sklearn.naive_bayes import CategoricalNB

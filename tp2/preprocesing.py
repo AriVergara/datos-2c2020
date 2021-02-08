@@ -12,6 +12,7 @@ from sklearn.preprocessing import (
 # --------- FUNCIONES DE PREPROCESAMIENTO ------------
 
 RANDOM_STATE = 117
+
 TEST_SIZE = 0.2
 
 def procesamiento_arboles(df):
