@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.9.1
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -14,7 +14,7 @@
 # ---
 
 import pandas as pd
-import preprocesing as pp
+import preprocesing_viejo as pp
 from sklearn import preprocessing, tree
 import dtreeviz.trees as dtreeviz
 import numpy as np

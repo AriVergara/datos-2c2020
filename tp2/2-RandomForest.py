@@ -19,7 +19,7 @@ from sklearn import preprocessing, tree
 import dtreeviz.trees as dtreeviz
 import numpy as np
 from ipywidgets import Button, IntSlider, interactive
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedKFold, cross_validate
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score
 from sklearn.ensemble import RandomForestClassifier
 import seaborn as sns
@@ -35,11 +35,46 @@ df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_
 
 # ### Preprocesamiento
 
-X_train, X_test, y_train, y_test = pp.procesamiento_arboles_discretizer(df)
+y_train = df.volveria
+X_train = pp.procesamiento_rf_2(df.drop('volveria', axis=1, inplace=False))
+
+X_train.head()
+
+y_train.head()
+
+model = RandomForestClassifier(max_depth=5, min_samples_leaf=3)
+
+# ### Métricas
+
+cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
+scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
+scores_for_model = cross_validate(model, X_train, y_train, cv=cv, scoring=scoring_metrics)
+
+# ##### AUC-ROC
+
+round(scores_for_model['test_roc_auc'].mean(), 3)
+
+# ##### Accuracy
+
+round(scores_for_model['test_accuracy'].mean(), 3)
+
+# ##### Precision
+
+round(scores_for_model['test_precision'].mean(), 3)
+
+# ##### Recall
+
+round(scores_for_model['test_recall'].mean(), 3)
+
+# ##### F1 Score
+
+round(scores_for_model['test_f1'].mean(), 3)
+
+model.random_state
 
 # ### Entrenamiento
 
-model_rfr = RandomForestClassifier(max_depth=5, min_samples_leaf=3)
+model_rfr = RandomForestClassifier(max_depth=5, min_samples_leaf=3, random_state=pp.RANDOM_STATE)
 model_rfr.fit(X_train, y_train)
 
 # ### Metricas

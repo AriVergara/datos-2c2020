@@ -11,6 +11,8 @@ from sklearn.preprocessing import (
 
 # --------- FUNCIONES DE PREPROCESAMIENTO ------------
 
+RANDOM_STATE = 117
+
 def procesamiento_arboles(df):
     #Se indica que columnas tenian edad nula
     df['edad_nan'] = np.where(df['edad'].isnull(), 1, 0)
@@ -30,6 +32,60 @@ def procesamiento_arboles(df):
     #df = one_hot_encoding(df, 'nombre_sede')
     df = one_hot_encoding(df, 'genero')
     #df = one_hot_encoding(df, 'tipo_de_sala')
+    #Se dropea la edad con missing values y se redondean los valores de edad calculados
+    df.drop(['edad'],axis=1, inplace=True)
+    df.drop(['precio_ticket'],axis=1, inplace=True)
+    df = redondear_edades(df, 'edad_knn')
+    #Se dropean las columnas titulo e id_usuario que no son utiles
+    df.drop(columns=['id_usuario', 'nombre_sede', 'tipo_de_sala'], inplace=True)
+    return df
+
+def procesamiento_rf_1(df):
+    #Se indica que columnas tenian edad nula
+    df['edad_nan'] = np.where(df['edad'].isnull(), 1, 0)
+    df['mujer_4d_palermo'] = np.where((df['genero'] == 'mujer') & (df['tipo_de_sala'] == '4d') & (df['nombre_sede'] == 'fiumark_palermo'), 1, 0)
+    for sede in ['fiumark_palermo', 'fiumark_quilmes', 'fiumark_chacarita']:
+        for sala in ['normal', '3d', '4d']:
+            df[sede+'_'+sala] = np.where((df['tipo_de_sala'] == sala) & (df['nombre_sede'] == sede), 1, 0)
+    #Se procesa el titulo de cada encuestado para que lo utilice el 
+    #knnimputer para calcular los missing values en la edad.
+    ##df['titulo'] = df.nombre.str.split(expand=True).iloc[:,0]
+    #Se borran columnas que no aportan datos significativos
+    borrar_columna(df, 'fila', True)
+    borrar_columna(df, 'nombre', True)
+    borrar_columna(df, 'id_ticket', True)
+    df['edad_knn'] = knn_imputer(df)
+    #Se encodean las columnas categoricas
+    #df = one_hot_encoding(df, 'nombre_sede')
+    df = one_hot_encoding(df, 'genero')
+    #df = one_hot_encoding(df, 'tipo_de_sala')
+    #Se dropea la edad con missing values y se redondean los valores de edad calculados
+    df.drop(['edad'],axis=1, inplace=True)
+    df.drop(['precio_ticket'],axis=1, inplace=True)
+    df = redondear_edades(df, 'edad_knn')
+    #Se dropean las columnas titulo e id_usuario que no son utiles
+    df.drop(columns=['id_usuario', 'nombre_sede', 'tipo_de_sala'], inplace=True)
+    return df
+
+def procesamiento_rf_2(df):
+    #Se indica que columnas tenian edad nula
+    df['edad_nan'] = np.where(df['edad'].isnull(), 1, 0)
+    #df['mujer_4d_palermo'] = np.where((df['genero'] == 'mujer') & (df['tipo_de_sala'] == '4d') & (df['nombre_sede'] == 'fiumark_palermo'), 1, 0)
+    for sede in ['fiumark_palermo', 'fiumark_quilmes', 'fiumark_chacarita']:
+        for sala in ['normal', '3d', '4d']:
+            df[sede+'_'+sala] = np.where((df['tipo_de_sala'] == sala) & (df['nombre_sede'] == sede), 1, 0)
+    #Se procesa el titulo de cada encuestado para que lo utilice el 
+    #knnimputer para calcular los missing values en la edad.
+    ##df['titulo'] = df.nombre.str.split(expand=True).iloc[:,0]
+    #Se borran columnas que no aportan datos significativos
+    borrar_columna(df, 'fila', True)
+    borrar_columna(df, 'nombre', True)
+    borrar_columna(df, 'id_ticket', True)
+    df['edad_knn'] = knn_imputer(df)
+    #Se encodean las columnas categoricas
+    df = one_hot_encoding(df, 'nombre_sede')
+    df = one_hot_encoding(df, 'genero', dummy_na=False)
+    df = one_hot_encoding(df, 'tipo_de_sala')
     #Se dropea la edad con missing values y se redondean los valores de edad calculados
     df.drop(['edad'],axis=1, inplace=True)
     df.drop(['precio_ticket'],axis=1, inplace=True)
@@ -104,8 +160,8 @@ def borrar_columna(df, columna, ip=False):
     else:
         return df.drop(axis=1, columns=[columna])
 
-def one_hot_encoding(df, variable):
-    return pd.get_dummies(df, columns=[variable], dummy_na=True, drop_first=True)    
+def one_hot_encoding(df, variable, dummy_na=True, drop_first=True):
+    return pd.get_dummies(df, columns=[variable], dummy_na=dummy_na, drop_first=drop_first)    
 
 def label_encoding(df, variable):
     le = LabelEncoder()
