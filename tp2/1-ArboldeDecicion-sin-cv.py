@@ -2,6 +2,7 @@
 # ---
 # jupyter:
 #   jupytext:
+#     formats: ipynb,py:light
 #     text_representation:
 #       extension: .py
 #       format_name: light
@@ -14,14 +15,13 @@
 # ---
 
 import pandas as pd
-import preprocesing as pp
+import preprocesing_viejo as pp
 from sklearn import preprocessing, tree
 import dtreeviz.trees as dtreeviz
 import numpy as np
 from ipywidgets import Button, IntSlider, interactive
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score
-from sklearn.ensemble import RandomForestClassifier
 import seaborn as sns
 import matplotlib.pyplot as plt
 
@@ -33,18 +33,69 @@ df_datos = pd.read_csv('https://drive.google.com/uc?export=download&id=1i-KJ2lSv
 df_datos.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
 df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_usuario')
 
-# ### Preprocesamiento
+df.parientes.describe()
 
-X_train, X_test, y_train, y_test = pp.procesamiento_arboles_discretizer(df)
+df.head()
+
+# ### Preprocesamiento
+# Con el metodo `procesamiento_arboles_discretizer` mejoran todas las metricas excepto `Precision`.
+
+X_train, X_test, y_train, y_test = pp.procesamiento_arboles(df)
+
+X_train
+
+y_train
+
+X_train.head()
 
 # ### Entrenamiento
 
-model_rfr = RandomForestClassifier(max_depth=5, min_samples_leaf=3)
-model_rfr.fit(X_train, y_train)
+model = tree.DecisionTreeClassifier(random_state=117, max_depth=4, min_samples_leaf=15)
+model.fit(X_train, y_train)
+
+# +
+viz = dtreeviz.dtreeviz(
+    model,
+    X_train,
+    y_train,
+    target_name='volveria',
+    feature_names=list(X_train.columns),
+    scale=1.5,
+)
+
+display(viz)
+
+# +
+max_depths = np.arange(1, 25)
+min_samples_leafs = np.arange(1, 51)
+data_points = []
+for max_depth in max_depths:
+    for min_samples_leaf in min_samples_leafs:
+        clf_test = tree.DecisionTreeClassifier(
+            max_depth=max_depth, min_samples_leaf=min_samples_leaf, random_state=117
+        )
+        clf_test.fit(X_train, y_train)
+        data_points.append(
+            (max_depth, min_samples_leaf, accuracy_score(y_test, clf_test.predict(X_test)),)
+        )
+
+data_points = pd.DataFrame(
+    data_points, columns=["max_depth", "min_samples_leaf", "score"]
+)
+plt.figure(dpi=125, figsize=(12, 8))
+g = sns.heatmap(
+    data_points.pivot_table(
+        index="max_depth", columns="min_samples_leaf", values="score"
+    ),
+    square=True,
+    cbar_kws=dict(use_gridspec=False, location="bottom"),
+)
+# -
 
 # ### Metricas
 
-y_pred = model_rfr.predict(X_test)
+y_pred = clf.predict(X_test)
+y_pred
 
 # ##### AUC-ROC
 

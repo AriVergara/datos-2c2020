@@ -15,15 +15,9 @@
 
 import pandas as pd
 import preprocesing as pp
-from sklearn import preprocessing, tree
-import dtreeviz.trees as dtreeviz
-import numpy as np
-from ipywidgets import Button, IntSlider, interactive
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score
-from sklearn.ensemble import RandomForestClassifier
-import seaborn as sns
-import matplotlib.pyplot as plt
+from sklearn.naive_bayes import CategoricalNB
 
 # ### Carga de Datasets
 
@@ -35,16 +29,16 @@ df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_
 
 # ### Preprocesamiento
 
-X_train, X_test, y_train, y_test = pp.procesamiento_arboles_discretizer(df)
+X_train, X_test, y_train, y_test = pp.procesamiento_arboles(df)
 
 # ### Entrenamiento
 
-model_rfr = RandomForestClassifier(max_depth=5, min_samples_leaf=3)
-model_rfr.fit(X_train, y_train)
+gnb = CategoricalNB()
+gnb.fit(X_train, y_train)
 
 # ### Metricas
 
-y_pred = model_rfr.predict(X_test)
+y_pred = gnb.predict(X_test)
 
 # ##### AUC-ROC
 

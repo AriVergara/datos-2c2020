@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
+#     formats: ipynb,py:light
 #     text_representation:
 #       extension: .py
 #       format_name: light
@@ -15,15 +15,9 @@
 
 import pandas as pd
 import preprocesing as pp
-from sklearn import preprocessing, tree
-import dtreeviz.trees as dtreeviz
-import numpy as np
-from ipywidgets import Button, IntSlider, interactive
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score
-from sklearn.ensemble import RandomForestClassifier
-import seaborn as sns
-import matplotlib.pyplot as plt
+from sklearn import svm
 
 # ### Carga de Datasets
 
@@ -39,12 +33,12 @@ X_train, X_test, y_train, y_test = pp.procesamiento_arboles_discretizer(df)
 
 # ### Entrenamiento
 
-model_rfr = RandomForestClassifier(max_depth=5, min_samples_leaf=3)
-model_rfr.fit(X_train, y_train)
+model = svm.SVC(kernel="linear")
+model.fit(X_train, y_train)
 
 # ### Metricas
 
-y_pred = model_rfr.predict(X_test)
+y_pred = model.predict(X_test)
 
 # ##### AUC-ROC
 
@@ -65,11 +59,5 @@ round(recall_score(y_test, y_pred), 2)
 # ##### F1 Score
 
 round(f1_score(y_test, y_pred), 2)
-
-# ### Predicción
-
-df_predecir = pd.read_csv('https://drive.google.com/uc?export=download&id=1I980-_K9iOucJO26SG5_M8RELOQ5VB6A')
-
-df_predecir.head()
 
 

@@ -36,35 +36,7 @@ def procesamiento_arboles(df):
     df = redondear_edades(df, 'edad_knn')
     #Se dropean las columnas titulo e id_usuario que no son utiles
     df.drop(columns=['id_usuario', 'nombre_sede', 'tipo_de_sala'], inplace=True)
-    return df
-
-def procesamiento_arboles_prueba(df):
-    #Se indica que columnas tenian edad nula
-    df['edad_nan'] = np.where(df['edad'].isnull(), 1, 0)
-    df['mujer_4d_palermo'] = np.where((df['genero'] == 'mujer') & (df['tipo_de_sala'] == '4d') & (df['nombre_sede'] == 'fiumark_palermo'), 1, 0)
-    for sede in ['fiumark_palermo', 'fiumark_quilmes', 'fiumark_chacarita']:
-        for sala in ['normal', '3d', '4d']:
-            df[sede+'_'+sala] = np.where((df['tipo_de_sala'] == sala) & (df['nombre_sede'] == sede), 1, 0)
-    #Se procesa el titulo de cada encuestado para que lo utilice el 
-    #knnimputer para calcular los missing values en la edad.
-    ##df['titulo'] = df.nombre.str.split(expand=True).iloc[:,0]
-    #Se borran columnas que no aportan datos significativos
-    borrar_columna(df, 'fila', True)
-    borrar_columna(df, 'nombre', True)
-    borrar_columna(df, 'id_ticket', True)
-    df['edad_knn'] = knn_imputer(df)
-    #Se encodean las columnas categoricas
-    #df = one_hot_encoding(df, 'nombre_sede')
-    df = one_hot_encoding(df, 'genero')
-    #df = one_hot_encoding(df, 'tipo_de_sala')
-    #Se dropea la edad con missing values y se redondean los valores de edad calculados
-    df.drop(['edad'],axis=1, inplace=True)
-    df.drop(['precio_ticket'],axis=1, inplace=True)
-    df = redondear_edades(df, 'edad_knn')
-    #Se dropean las columnas titulo e id_usuario que no son utiles
-    df.drop(columns=['id_usuario', 'nombre_sede', 'tipo_de_sala'], inplace=True)
-    return df
-
+    return obtener_sets(df)
 
 def procesamiento_arboles_discretizer(df):
     #Se indica que columnas tenian edad nula
@@ -94,9 +66,14 @@ def procesamiento_arboles_discretizer(df):
     print(df.head())
     #Se dropean las columnas titulo e id_usuario que no son utiles
     df.drop(columns=['id_usuario'], inplace=True)
-    return df
+    return obtener_sets(df)
 
 # -------------- FUNCIONES AUXILIARES -----------------
+
+def obtener_sets(df):
+    X = df.drop(columns=['volveria'])
+    y = df.volveria
+    return train_test_split(X, y, test_size=0.2, random_state=0, stratify=y)
 
 def borrar_columna(df, columna, ip=False):
     if ip:
@@ -154,5 +131,3 @@ def kbins_discretizer(df, col, n_bins=4):
     _df = df[[col]].dropna().reset_index(drop=True)
     X_binned = enc.fit_transform(_df)
     return X_binned.astype(int)
-
-
