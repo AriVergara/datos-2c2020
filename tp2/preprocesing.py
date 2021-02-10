@@ -8,6 +8,7 @@ from sklearn.preprocessing import (
     LabelEncoder,
     OneHotEncoder
 )
+from category_encoders import TargetEncoder
 
 # --------- FUNCIONES DE PREPROCESAMIENTO ------------
 
@@ -42,13 +43,58 @@ def procesamiento_arboles(df):
     df.drop(columns=['id_usuario', 'nombre_sede', 'tipo_de_sala'], inplace=True)
     return df
 
+def procesamiento_rf_prueba(df):
+    #Se indica que columnas tenian edad nula
+    
+    #df['mujer_4d_palermo'] = np.where((df['genero'] == 'mujer') & (df['tipo_de_sala'] == '4d') & (df['nombre_sede'] == 'fiumark_palermo'), 1, 0)
+    #for sede in ['fiumark_palermo', 'fiumark_quilmes', 'fiumark_chacarita']:
+    #    for sala in ['normal', '3d', '4d']:
+    #        df[sede+'_'+sala] = np.where((df['tipo_de_sala'] == sala) & (df['nombre_sede'] == sede), 1, 0)
+    #Se procesa el titulo de cada encuestado para que lo utilice el 
+    #knnimputer para calcular los missing values en la edad.
+    ##df['titulo'] = df.nombre.str.split(expand=True).iloc[:,0]
+    #Se borran columnas que no aportan datos significativos
+    df['fila_isna'] = df['fila'].isna().astype(int)
+    df = one_hot_encoding(df, 'fila', False, True)
+    
+    borrar_columna(df, 'nombre', True)
+    borrar_columna(df, 'id_ticket', True)
+    
+    df['edad_nan'] = df['edad'].isna().astype(int)
+    df['edad_knn'] = knn_imputer(df)
+    
+    #Se encodean las columnas categoricas
+    tg = TargetEncoder()
+    
+    df["nombre_sede_is_na"] = df['nombre_sede'].isna().astype(int)
+    df["nombre_sede_encoder"] = tg.fit_transform(df['nombre_sede'], df['volveria'])
+    tg = TargetEncoder()
+    df["genero_encoder"] = tg.fit_transform(df['genero'], df['volveria'])
+    tg = TargetEncoder()
+    df["tipo_de_sala_encoder"] = tg.fit_transform(df['tipo_de_sala'], df['volveria'])
+    
+    borrar_columna(df, 'tipo_de_sala', True)
+    borrar_columna(df, 'genero', True)
+    borrar_columna(df, 'nombre_sede', True)
+    
+    #Se dropea la edad con missing values y se redondean los valores de edad calculados
+    df.drop(['edad'],axis=1, inplace=True)
+    df.drop(['precio_ticket'],axis=1, inplace=True)
+    
+    #df = redondear_edades(df, 'edad_knn')
+    #Se dropean las columnas titulo e id_usuario que no son utiles
+    df.drop(columns=['id_usuario'], inplace=True)
+    return df
+
+
+
 def procesamiento_rf_1(df):
     #Se indica que columnas tenian edad nula
     df['edad_nan'] = np.where(df['edad'].isnull(), 1, 0)
-    df['mujer_4d_palermo'] = np.where((df['genero'] == 'mujer') & (df['tipo_de_sala'] == '4d') & (df['nombre_sede'] == 'fiumark_palermo'), 1, 0)
-    for sede in ['fiumark_palermo', 'fiumark_quilmes', 'fiumark_chacarita']:
-        for sala in ['normal', '3d', '4d']:
-            df[sede+'_'+sala] = np.where((df['tipo_de_sala'] == sala) & (df['nombre_sede'] == sede), 1, 0)
+    #df['mujer_4d_palermo'] = np.where((df['genero'] == 'mujer') & (df['tipo_de_sala'] == '4d') & (df['nombre_sede'] == 'fiumark_palermo'), 1, 0)
+    #for sede in ['fiumark_palermo', 'fiumark_quilmes', 'fiumark_chacarita']:
+    #    for sala in ['normal', '3d', '4d']:
+    #        df[sede+'_'+sala] = np.where((df['tipo_de_sala'] == sala) & (df['nombre_sede'] == sede), 1, 0)
     #Se procesa el titulo de cada encuestado para que lo utilice el 
     #knnimputer para calcular los missing values en la edad.
     ##df['titulo'] = df.nombre.str.split(expand=True).iloc[:,0]
@@ -58,15 +104,15 @@ def procesamiento_rf_1(df):
     borrar_columna(df, 'id_ticket', True)
     df['edad_knn'] = knn_imputer(df)
     #Se encodean las columnas categoricas
-    #df = one_hot_encoding(df, 'nombre_sede')
+    df = one_hot_encoding(df, 'nombre_sede')
     df = one_hot_encoding(df, 'genero')
-    #df = one_hot_encoding(df, 'tipo_de_sala')
+    df = one_hot_encoding(df, 'tipo_de_sala')
     #Se dropea la edad con missing values y se redondean los valores de edad calculados
     df.drop(['edad'],axis=1, inplace=True)
     df.drop(['precio_ticket'],axis=1, inplace=True)
     df = redondear_edades(df, 'edad_knn')
     #Se dropean las columnas titulo e id_usuario que no son utiles
-    df.drop(columns=['id_usuario', 'nombre_sede', 'tipo_de_sala'], inplace=True)
+    df.drop(columns=['id_usuario'], inplace=True)
     return df
 
 def procesamiento_rf_2(df):
