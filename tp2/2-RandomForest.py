@@ -71,6 +71,41 @@ def preprocesar(X_train, y_train, X_to_preprocess):
     return X_to_preprocess
 
 
+def preprocesar_le(X_train, y_train, X_to_preprocess):
+    def bins_segun_precio(valor):
+        if valor == 1:
+            return 1
+        if 2 <= valor <= 3:
+            return 2
+        return 3
+
+    X_to_preprocess["fila_isna"] = X_to_preprocess["fila"].isna().astype(int)
+    X_to_preprocess = X_to_preprocess.drop(columns=["fila"], axis=1, inplace=False)
+    
+    X_to_preprocess["edad_isna"] = X_to_preprocess["edad"].isna().astype(int)
+    X_to_preprocess["edad"] = X_to_preprocess["edad"].fillna(X_train["edad"].mean())
+    
+    encoder_nombre_sede = LabelEncoder()
+    encoder_nombre_sede.fit(X_train['nombre_sede'].astype(str))
+    X_to_preprocess['nombre_sede'] = encoder_nombre_sede.transform(X_to_preprocess['nombre_sede'].astype(str))
+    
+    encoder_nombre_sede = LabelEncoder()
+    encoder_nombre_sede.fit(X_train['tipo_de_sala'].astype(str))
+    X_to_preprocess['tipo_de_sala'] = encoder_nombre_sede.transform(X_to_preprocess['tipo_de_sala'].astype(str))
+    
+    encoder_nombre_sede = LabelEncoder()
+    encoder_nombre_sede.fit(X_train['genero'].astype(str))
+    X_to_preprocess['genero'] = encoder_nombre_sede.transform(X_to_preprocess['genero'].astype(str))
+    
+    X_to_preprocess["precio_ticket_bins"] = X_to_preprocess["precio_ticket"].apply(bins_segun_precio)
+    
+    X_to_preprocess = X_to_preprocess.drop(columns=["id_usuario"], axis=1, inplace=False)
+    X_to_preprocess = X_to_preprocess.drop(columns=["nombre"], axis=1, inplace=False)
+    X_to_preprocess = X_to_preprocess.drop(columns=["id_ticket"], axis=1, inplace=False)
+    
+    return X_to_preprocess
+
+
 X = df.drop(columns="volveria", axis=1, inplace=False)
 y = df["volveria"]
 
@@ -84,7 +119,7 @@ def random_forest_cv(X, y, preprocesar, rf_params={}, cv_n_splits=8, random_stat
     test_recalls = []
     test_f1_scores = []
     for fold_idx, (train_index, test_index) in enumerate(kf.split(X, y)):
-        clf = RandomForestClassifier(random_state=random_state, **rf_params)
+        clf = RandomForestClassifier(n_jobs=-1, random_state=random_state, **rf_params)
 
         X_train_cv = X.loc[train_index,]
         y_train_cv = y[train_index]
@@ -121,16 +156,70 @@ def random_forest_cv(X, y, preprocesar, rf_params={}, cv_n_splits=8, random_stat
 
 random_forest_cv(X=X, 
                  y=y, 
-                 preprocesar=preprocesar, 
+                 preprocesar=preprocesar_le, 
                  rf_params={"max_depth": 100, "min_samples_leaf":10, "n_estimators": 200, "min_samples_split":2})
 
 df_predecir = pd.read_csv('https://drive.google.com/uc?export=download&id=1I980-_K9iOucJO26SG5_M8RELOQ5VB6A')
 
-model = RandomForestClassifier(max_depth=5, min_samples_leaf=3)
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
-scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
-scores_for_model = cross_validate(model, preprocesar(X,y,X), y, cv=cv, scoring=scoring_metrics)
+# +
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.pipeline import Pipeline
 
-round(scores_for_model['test_roc_auc'].mean(), 3)
+class PreprocessingTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self, n_jobs=1):
+        super().__init__()
+        self.le_tipo_sala = LabelEncoder()
+        self.le_nombre_sede = LabelEncoder()
+        self.le_genero = LabelEncoder()
+        self.mean_edad = 0
+    
+    def fit(self, X, y=None):
+        self.mean_edad = X["edad"].mean()
+        self.le_tipo_sala.fit(X['tipo_de_sala'].astype(str))
+        self.le_nombre_sede.fit(X['nombre_sede'].astype(str))
+        self.le_genero.fit(X['genero'].astype(str))
+        return self
+
+    def transform(self, X):
+        X["fila_isna"] = X["fila"].isna().astype(int)
+        X = X.drop(columns=["fila"], axis=1, inplace=False)
+        X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
+        X = X.drop(columns=["nombre"], axis=1, inplace=False)
+        X = X.drop(columns=["id_ticket"], axis=1, inplace=False)
+
+        X["edad_isna"] = X["edad"].isna().astype(int)
+        X["edad"] = X["edad"].fillna(self.mean_edad)
+
+        X['nombre_sede'] = self.le_nombre_sede.transform(X['nombre_sede'].astype(str))
+        
+        X['tipo_de_sala'] = self.le_tipo_sala.transform(X['tipo_de_sala'].astype(str))
+        
+        X['genero'] = self.le_genero.transform(X['genero'].astype(str))
+
+        X["precio_ticket_bins"] = X["precio_ticket"].apply(self._bins_segun_precio)
+        
+        return X
+    
+    def _bins_segun_precio(self, valor):
+        if valor == 1:
+            return 1
+        if 2 <= valor <= 3:
+            return 2
+        return 3
+
+
+# -
+
+pipeline = Pipeline([("preprocessor", PreprocessingTransformer()), 
+                     ("model", RandomForestClassifier(n_jobs=-1))
+                     ])
+
+X.head()
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=117, stratify=y, shuffle=True)
+
+pipeline.fit(X_train, y_train)
+
+roc_auc_score(pipeline.predict(X_test), y_test)
 
 
