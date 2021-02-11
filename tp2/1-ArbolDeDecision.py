@@ -166,13 +166,46 @@ columnas = ['AUC_ROC', 'Accuracy', 'Precision', 'Recall', 'F1 Score']
 results = [s(y_pred, y_test) for s in scores]
 display(pd.DataFrame([results], columns=columnas).style.hide_index())
 
+# ### Predicción HoldOut
+
+df_predecir = pd.read_csv('https://drive.google.com/uc?export=download&id=1I980-_K9iOucJO26SG5_M8RELOQ5VB6A')
+
+df_predecir['volveria'] = pipeline.predict(df_predecir)
+df_predecir = df_predecir[['id_usuario', 'volveria']]
+
+#with open('1-ArbolDeDecision.csv', 'w') as f:
+ #   df_predecir.to_csv(f, sep=',', index=False)
 
 
+# ### Modelo 0
+
+# +
+def clasificar_encuestado(fila):
+    if fila['edad'] < 18:
+        acompaniantes = fila['parientes'] + fila['amigos']
+        return 1 if acompaniantes <= 3 else 0
+    if fila['genero'] == 'hombre':
+        return 0
+    if fila['tipo_de_sala'] == '4d' and fila['nombre_sede'] == 'fiumark_palermo':
+        return 0
+    return 1
 
 
+def baseline(X):
+    resultado = []
+    for nro_fila in range(len(X)):
+        resultado.append(clasificar_encuestado(df.loc[nro_fila,:]))
+    return resultado
 
 
+# -
 
+y_pred_baseline = baseline(X_test)
+
+scores = [roc_auc_score, accuracy_score, precision_score, recall_score, f1_score]
+columnas = ['AUC_ROC', 'Accuracy', 'Precision', 'Recall', 'F1 Score']
+results = [s(y_pred_baseline, y_test) for s in scores]
+display(pd.DataFrame([results], columns=columnas).style.hide_index())
 
 
 
