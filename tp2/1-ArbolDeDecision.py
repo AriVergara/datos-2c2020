@@ -16,7 +16,7 @@
 
 import pandas as pd
 import preprocesing as pp
-from sklearn import preprocessing
+from sklearn import preprocessing, tree
 import numpy as np
 from ipywidgets import Button, IntSlider, interactive
 from sklearn.model_selection import train_test_split, StratifiedKFold, cross_validate
@@ -61,7 +61,7 @@ y = df["volveria"]
 # - Hiperparametros por defecto
 
 preprocessor = pp.PreprocessingLE()
-model = RandomForestClassifier(random_state=pp.RANDOM_STATE, n_jobs=-1)
+model = tree.DecisionTreeClassifier(random_state=pp.RANDOM_STATE)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
                      ("model", model)
@@ -84,15 +84,7 @@ print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 # - Hiperparametros por defecto
 
 preprocessor = pp.PreprocessingOHE()
-model = RandomForestClassifier(random_state=pp.RANDOM_STATE, n_jobs=-1)
-
-preprocessor.fit(X)
-
-prueba = preprocessor.transform(X)
-
-prueba.isnull().any()
-
-prueba
+model = tree.DecisionTreeClassifier(random_state=pp.RANDOM_STATE)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
                      ("model", model)
@@ -115,7 +107,7 @@ print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 # - Estimación de Hiperparametros con GridSearchCV
 
 preprocessor = pp.PreprocessingLE()
-model = RandomForestClassifier(random_state=pp.RANDOM_STATE, n_jobs=-1)
+model = tree.DecisionTreeClassifier(random_state=pp.RANDOM_STATE, n_jobs=-1)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
                      ("model", model)
@@ -124,7 +116,7 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 # +
 from sklearn.model_selection import GridSearchCV
 params = {'model__max_depth': np.arange(1, 31), 'model__min_samples_leaf': np.arange(1, 16),
-         "model__n_estimators": [50, 75, 100, 125, 150, 200], "model__min_samples_split": np.arange(2, 16)}
+         "n_estimators": 200, "min_samples_split":2}
 
 gscv = GridSearchCV(
     pipeline, params, scoring='accuracy', n_jobs=-1, cv=5, return_train_score=True
@@ -158,11 +150,8 @@ print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, 
                                                     random_state=pp.RANDOM_STATE, stratify=y)
 
-preprocessor = pp.PreprocessingLE()
-model = RandomForestClassifier(random_state=pp.RANDOM_STATE, 
-                               n_jobs=-1, 
-                               max_depth=12, 
-                               min_samples_leaf=4)
+preprocessor = pp.PreprocessingOHE()
+model = tree.DecisionTreeClassifier(random_state=pp.RANDOM_STATE)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
                      ("model", model)
@@ -176,6 +165,10 @@ scores = [roc_auc_score, accuracy_score, precision_score, recall_score, f1_score
 columnas = ['AUC_ROC', 'Accuracy', 'Precision', 'Recall', 'F1 Score']
 results = [s(y_pred, y_test) for s in scores]
 display(pd.DataFrame([results], columns=columnas).style.hide_index())
+
+
+
+
 
 
 

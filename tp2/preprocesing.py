@@ -9,12 +9,92 @@ from sklearn.preprocessing import (
     OneHotEncoder
 )
 from category_encoders import TargetEncoder
+from sklearn.base import BaseEstimator, TransformerMixin
+
 
 # --------- FUNCIONES DE PREPROCESAMIENTO ------------
 
 RANDOM_STATE = 117
 
 TEST_SIZE = 0.2
+
+
+class PreprocessingLE(BaseEstimator, TransformerMixin):
+    def __init__(self, n_jobs=1):
+        super().__init__()
+        self.le_tipo_sala_ = LabelEncoder()
+        self.le_nombre_sede_ = LabelEncoder()
+        self.le_genero_ = LabelEncoder()
+        self.mean_edad_ = 0
+    
+    def fit(self, X, y=None):
+        self.mean_edad_ = X["edad"].mean()
+        self.le_tipo_sala_.fit(X['tipo_de_sala'].astype(str))
+        self.le_nombre_sede_.fit(X['nombre_sede'].astype(str))
+        self.le_genero_.fit(X['genero'].astype(str))
+        return self
+
+    def transform(self, X):
+        X["fila_isna"] = X["fila"].isna().astype(int)
+        X = X.drop(columns=["fila"], axis=1, inplace=False)
+        X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
+        X = X.drop(columns=["nombre"], axis=1, inplace=False)
+        X = X.drop(columns=["id_ticket"], axis=1, inplace=False)
+
+        X["edad_isna"] = X["edad"].isna().astype(int)
+        X["edad"] = X["edad"].fillna(self.mean_edad_)
+
+        X['nombre_sede'] = self.le_nombre_sede_.transform(X['nombre_sede'].astype(str))
+        
+        X['tipo_de_sala'] = self.le_tipo_sala_.transform(X['tipo_de_sala'].astype(str))
+        
+        X['genero'] = self.le_genero_.transform(X['genero'].astype(str))
+
+        X["precio_ticket_bins"] = X["precio_ticket"].apply(self._bins_segun_precio)
+        return X
+    
+    def _bins_segun_precio(self, valor):
+        if valor == 1:
+            return 1
+        if 2 <= valor <= 3:
+            return 2
+        return 3
+
+class PreprocessingOHE(BaseEstimator, TransformerMixin):
+    def __init__(self, n_jobs=1):
+        super().__init__()
+        self.mean_edad_ = 0
+    
+    def fit(self, X, y=None):
+        self.mean_edad_ = X["edad"].mean()
+        return self
+
+    def transform(self, X):
+        X["fila_isna"] = X["fila"].isna().astype(int)
+        X = X.drop(columns=["fila"], axis=1, inplace=False)
+        X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
+        X = X.drop(columns=["nombre"], axis=1, inplace=False)
+        X = X.drop(columns=["id_ticket"], axis=1, inplace=False)
+
+        X["edad_isna"] = X["edad"].isna().astype(int)
+        X["edad"] = X["edad"].fillna(self.mean_edad_)
+        
+        X = pd.get_dummies(X, columns=['genero'], dummy_na=True, drop_first=True) 
+        
+        X = pd.get_dummies(X, columns=['tipo_de_sala'], dummy_na=True, drop_first=True) 
+        
+        X = pd.get_dummies(X, columns=['nombre_sede'], dummy_na=True, drop_first=True)
+
+        X["precio_ticket_bins"] = X["precio_ticket"].apply(self._bins_segun_precio)
+        return X
+    
+    def _bins_segun_precio(self, valor):
+        if valor == 1:
+            return 1
+        if 2 <= valor <= 3:
+            return 2
+        return 3
+    
 
 def procesamiento_arboles(df):
     #Se indica que columnas tenian edad nula
