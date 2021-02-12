@@ -78,8 +78,6 @@ print(f"mean test precision is: {scores_for_model['test_precision'].mean():.4f}"
 print(f"mean test recall is: {scores_for_model['test_recall'].mean():.4f}")
 print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 
-X.edad.quantile([0,0.25,0.5,0.75,1]).values
-
 # ### Modelo 2
 
 # - Preprocesamiento con OneHotEncoding
@@ -126,10 +124,25 @@ gscv = GridSearchCV(
 
 gscv.best_params_
 
+gscv.best_score_
+
+from sklearn.model_selection import GridSearchCV
+params = {'model__max_depth': np.arange(5,15), 'model__min_samples_leaf': np.arange(1,5),
+         "model__n_estimators": [75, 100, 125], "model__min_samples_split": np.arange(12, 25)}
+cv = StratifiedKFold(n_splits=5, random_state=pp.RANDOM_STATE, shuffle=True)
+gscv = GridSearchCV(
+    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
+).fit(X, y)
+
+gscv.best_params_
+
+gscv.best_score_
+
 model = RandomForestClassifier(random_state=pp.RANDOM_STATE, 
                                n_jobs=-1, 
-                               max_depth=12, 
-                               min_samples_leaf=4)
+                               max_depth=11, 
+                               min_samples_leaf=1, 
+                               min_samples_split=13)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
                      ("model", model)
@@ -148,11 +161,14 @@ print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 
 # Se eligió el....
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=pp.RANDOM_STATE, stratify=y)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=pp.RANDOM_STATE, stratify=y)
 
 preprocessor = pp.PreprocessingLE()
-model = RandomForestClassifier(random_state=pp.RANDOM_STATE,
-                               n_jobs=-1)
+model = RandomForestClassifier(random_state=pp.RANDOM_STATE, 
+                               n_jobs=-1, 
+                               max_depth=11, 
+                               min_samples_leaf=1, 
+                               min_samples_split=13)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
                      ("model", model)

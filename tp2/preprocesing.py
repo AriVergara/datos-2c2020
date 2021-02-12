@@ -20,6 +20,12 @@ TEST_SIZE = 0.2
 
 
 class PreprocessingLE(BaseEstimator, TransformerMixin):
+    """
+    -Elimina columnas sin infromación valiosa (fila, id_usuario, id_ticket).
+    -Encodea variables categóricas mediante LabelEncoding (genero, nombre_sala, tipo_de_sala)
+    -Completa los missing values de la columna edad con la media
+    -Convierte en bins los valores de las columnas edad y precio_ticket.
+    """
     def __init__(self):
         super().__init__()
         self.le_tipo_sala = LabelEncoder()
@@ -81,8 +87,62 @@ class PreprocessingLE(BaseEstimator, TransformerMixin):
         if 40 < edad <= 70:
             return 4
         return 5
+    
+class PreprocessingLE_2(BaseEstimator, TransformerMixin):
+    """
+    -Elimina columnas sin infromación valiosa (fila, id_usuario, id_ticket).
+    -Encodea variables categóricas mediante LabelEncoding (genero, nombre_sala, tipo_de_sala)
+    -Completa los missing values de la columna edad con la media.
+    -Convierte en bins los valores de la columna precio_ticket.
+    """
+    def __init__(self):
+        super().__init__()
+        self.le_tipo_sala = LabelEncoder()
+        self.le_nombre_sede = LabelEncoder()
+        self.le_genero = LabelEncoder()
+        self.mean_edad = 0
+    
+    def fit(self, X, y=None):
+        self.mean_edad = X["edad"].mean()
+        self.le_tipo_sala.fit(X['tipo_de_sala'].astype(str))
+        self.le_nombre_sede.fit(X['nombre_sede'].astype(str))
+        self.le_genero.fit(X['genero'].astype(str))
+        return self
+
+    def transform(self, X):
+        X.loc[:, "fila_isna"] = X["fila"].isna().astype(int)
+        X = X.drop(columns=["fila"], axis=1, inplace=False)
+        X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
+        X = X.drop(columns=["nombre"], axis=1, inplace=False)
+        X = X.drop(columns=["id_ticket"], axis=1, inplace=False)
+
+        X["edad_isna"] = X["edad"].isna().astype(int)
+        X["edad"] = X["edad"].fillna(self.mean_edad)
+
+        X['nombre_sede'] = self.le_nombre_sede.transform(X['nombre_sede'].astype(str))
+        
+        X['tipo_de_sala'] = self.le_tipo_sala.transform(X['tipo_de_sala'].astype(str))
+        
+        X['genero'] = self.le_genero.transform(X['genero'].astype(str))
+
+        X["precio_ticket_bins"] = X["precio_ticket"].apply(self._bins_segun_precio)
+        return X
+    
+    def _bins_segun_precio(self, valor):
+        if valor == 1:
+            return 1
+        if 2 <= valor <= 3:
+            return 2
+        return 3
+
 
 class PreprocessingOHE(BaseEstimator, TransformerMixin):
+    """
+    -Elimina columnas sin infromación valiosa (fila, id_usuario, id_ticket).
+    -Encodea variables categóricas mediante OneHotEncoding (genero, nombre_sala, tipo_de_sala)
+    -Completa los missing values de la columna edad con la media.
+    -Convierte en bins los valores de la columna precio_ticket.
+    """
     def __init__(self):
         super().__init__()
         self.mean_edad = 0
@@ -117,206 +177,48 @@ class PreprocessingOHE(BaseEstimator, TransformerMixin):
             return 2
         return 3
 
-
-def procesamiento_arboles(df):
-    #Se indica que columnas tenian edad nula
-    df['edad_nan'] = np.where(df['edad'].isnull(), 1, 0)
-    df['mujer_4d_palermo'] = np.where((df['genero'] == 'mujer') & (df['tipo_de_sala'] == '4d') & (df['nombre_sede'] == 'fiumark_palermo'), 1, 0)
-    for sede in ['fiumark_palermo', 'fiumark_quilmes', 'fiumark_chacarita']:
-        for sala in ['normal', '3d', '4d']:
-            df[sede+'_'+sala] = np.where((df['tipo_de_sala'] == sala) & (df['nombre_sede'] == sede), 1, 0)
-    #Se procesa el titulo de cada encuestado para que lo utilice el 
-    #knnimputer para calcular los missing values en la edad.
-    ##df['titulo'] = df.nombre.str.split(expand=True).iloc[:,0]
-    #Se borran columnas que no aportan datos significativos
-    borrar_columna(df, 'fila', True)
-    borrar_columna(df, 'nombre', True)
-    borrar_columna(df, 'id_ticket', True)
-    df['edad_knn'] = knn_imputer(df)
-    #Se encodean las columnas categoricas
-    #df = one_hot_encoding(df, 'nombre_sede')
-    df = one_hot_encoding(df, 'genero')
-    #df = one_hot_encoding(df, 'tipo_de_sala')
-    #Se dropea la edad con missing values y se redondean los valores de edad calculados
-    df.drop(['edad'],axis=1, inplace=True)
-    df.drop(['precio_ticket'],axis=1, inplace=True)
-    df = redondear_edades(df, 'edad_knn')
-    #Se dropean las columnas titulo e id_usuario que no son utiles
-    df.drop(columns=['id_usuario', 'nombre_sede', 'tipo_de_sala'], inplace=True)
-    return df
-
-def procesamiento_rf_prueba(df):
-    #Se indica que columnas tenian edad nula
+class PreprocessingOHE_2(BaseEstimator, TransformerMixin):
+    """
+    -Elimina columnas sin infromación valiosa (fila, id_usuario, id_ticket).
+    -Encodea variables categóricas mediante OneHotEncoding (genero, nombre_sala, tipo_de_sala)
+    -Completa los missing values de la columna edad mediante KNNImputer.
+    -Convierte en bins los valores de la columna precio_ticket.
+    """
+    def __init__(self):
+        super().__init__()
+        self.imputer_edad = KNNImputer(n_neighbors=2, weights="uniform")
     
-    #df['mujer_4d_palermo'] = np.where((df['genero'] == 'mujer') & (df['tipo_de_sala'] == '4d') & (df['nombre_sede'] == 'fiumark_palermo'), 1, 0)
-    #for sede in ['fiumark_palermo', 'fiumark_quilmes', 'fiumark_chacarita']:
-    #    for sala in ['normal', '3d', '4d']:
-    #        df[sede+'_'+sala] = np.where((df['tipo_de_sala'] == sala) & (df['nombre_sede'] == sede), 1, 0)
-    #Se procesa el titulo de cada encuestado para que lo utilice el 
-    #knnimputer para calcular los missing values en la edad.
-    ##df['titulo'] = df.nombre.str.split(expand=True).iloc[:,0]
-    #Se borran columnas que no aportan datos significativos
-    df['fila_isna'] = df['fila'].isna().astype(int)
-    df = one_hot_encoding(df, 'fila', False, True)
+    def fit(self, X, y=None):
+        cat_cols = ['tipo_de_sala', 'genero', 'nombre_sede']
+        X = hashing_encoding(X, cat_cols)
+        self.imputer_edad.fit(X)
+        return self
+
+    def transform(self, X):
+        X.loc[:, "fila_isna"] = X["fila"].isna().astype(int)
+        X = X.drop(columns=["fila"], axis=1, inplace=False)
+        X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
+        X = X.drop(columns=["nombre"], axis=1, inplace=False)
+        X = X.drop(columns=["id_ticket"], axis=1, inplace=False)
+
+        X["edad_isna"] = X["edad"].isna().astype(int)
+        X["edad"] = pd.DataFrame(imputer.fit_transform(df), columns=df.columns)["edad"]
+        
+        X = pd.get_dummies(X, columns=['genero'], dummy_na=True, drop_first=True) 
+        
+        X = pd.get_dummies(X, columns=['tipo_de_sala'], dummy_na=True, drop_first=True) 
+        
+        X = pd.get_dummies(X, columns=['nombre_sede'], dummy_na=True, drop_first=True)
+
+        X["precio_ticket_bins"] = X["precio_ticket"].apply(self._bins_segun_precio)
+        return X
     
-    borrar_columna(df, 'nombre', True)
-    borrar_columna(df, 'id_ticket', True)
-    
-    df['edad_nan'] = df['edad'].isna().astype(int)
-    df['edad_knn'] = knn_imputer(df)
-    
-    #Se encodean las columnas categoricas
-    tg = TargetEncoder()
-    
-    df["nombre_sede_is_na"] = df['nombre_sede'].isna().astype(int)
-    df["nombre_sede_encoder"] = tg.fit_transform(df['nombre_sede'], df['volveria'])
-    tg = TargetEncoder()
-    df["genero_encoder"] = tg.fit_transform(df['genero'], df['volveria'])
-    tg = TargetEncoder()
-    df["tipo_de_sala_encoder"] = tg.fit_transform(df['tipo_de_sala'], df['volveria'])
-    
-    borrar_columna(df, 'tipo_de_sala', True)
-    borrar_columna(df, 'genero', True)
-    borrar_columna(df, 'nombre_sede', True)
-    
-    #Se dropea la edad con missing values y se redondean los valores de edad calculados
-    df.drop(['edad'],axis=1, inplace=True)
-    df.drop(['precio_ticket'],axis=1, inplace=True)
-    
-    #df = redondear_edades(df, 'edad_knn')
-    #Se dropean las columnas titulo e id_usuario que no son utiles
-    df.drop(columns=['id_usuario'], inplace=True)
-    return df
-
-
-
-def procesamiento_rf_1(df):
-    #Se indica que columnas tenian edad nula
-    df['edad_nan'] = np.where(df['edad'].isnull(), 1, 0)
-    #df['mujer_4d_palermo'] = np.where((df['genero'] == 'mujer') & (df['tipo_de_sala'] == '4d') & (df['nombre_sede'] == 'fiumark_palermo'), 1, 0)
-    #for sede in ['fiumark_palermo', 'fiumark_quilmes', 'fiumark_chacarita']:
-    #    for sala in ['normal', '3d', '4d']:
-    #        df[sede+'_'+sala] = np.where((df['tipo_de_sala'] == sala) & (df['nombre_sede'] == sede), 1, 0)
-    #Se procesa el titulo de cada encuestado para que lo utilice el 
-    #knnimputer para calcular los missing values en la edad.
-    ##df['titulo'] = df.nombre.str.split(expand=True).iloc[:,0]
-    #Se borran columnas que no aportan datos significativos
-    borrar_columna(df, 'fila', True)
-    borrar_columna(df, 'nombre', True)
-    borrar_columna(df, 'id_ticket', True)
-    df['edad_knn'] = knn_imputer(df)
-    #Se encodean las columnas categoricas
-    df = one_hot_encoding(df, 'nombre_sede')
-    df = one_hot_encoding(df, 'genero')
-    df = one_hot_encoding(df, 'tipo_de_sala')
-    #Se dropea la edad con missing values y se redondean los valores de edad calculados
-    df.drop(['edad'],axis=1, inplace=True)
-    df.drop(['precio_ticket'],axis=1, inplace=True)
-    df = redondear_edades(df, 'edad_knn')
-    #Se dropean las columnas titulo e id_usuario que no son utiles
-    df.drop(columns=['id_usuario'], inplace=True)
-    return df
-
-def procesamiento_rf_2(df):
-    #Se indica que columnas tenian edad nula
-    df['edad_nan'] = np.where(df['edad'].isnull(), 1, 0)
-    #df['mujer_4d_palermo'] = np.where((df['genero'] == 'mujer') & (df['tipo_de_sala'] == '4d') & (df['nombre_sede'] == 'fiumark_palermo'), 1, 0)
-    for sede in ['fiumark_palermo', 'fiumark_quilmes', 'fiumark_chacarita']:
-        for sala in ['normal', '3d', '4d']:
-            df[sede+'_'+sala] = np.where((df['tipo_de_sala'] == sala) & (df['nombre_sede'] == sede), 1, 0)
-    #Se procesa el titulo de cada encuestado para que lo utilice el 
-    #knnimputer para calcular los missing values en la edad.
-    ##df['titulo'] = df.nombre.str.split(expand=True).iloc[:,0]
-    #Se borran columnas que no aportan datos significativos
-    borrar_columna(df, 'fila', True)
-    borrar_columna(df, 'nombre', True)
-    borrar_columna(df, 'id_ticket', True)
-    df['edad_knn'] = knn_imputer(df)
-    #Se encodean las columnas categoricas
-    df = one_hot_encoding(df, 'nombre_sede')
-    df = one_hot_encoding(df, 'genero', dummy_na=False)
-    df = one_hot_encoding(df, 'tipo_de_sala')
-    #Se dropea la edad con missing values y se redondean los valores de edad calculados
-    df.drop(['edad'],axis=1, inplace=True)
-    df.drop(['precio_ticket'],axis=1, inplace=True)
-    df = redondear_edades(df, 'edad_knn')
-    #Se dropean las columnas titulo e id_usuario que no son utiles
-    #df.drop(columns=['id_usuario', 'nombre_sede', 'tipo_de_sala'], inplace=True)
-    df.drop(columns=['id_usuario'], inplace=True)
-    return df
-
-def procesamiento_rf_3(df):
-    #Se indica que columnas tenian edad nula
-    df['edad_nan'] = np.where(df['edad'].isnull(), 1, 0)
-    #df['mujer_4d_palermo'] = np.where((df['genero'] == 'mujer') & (df['tipo_de_sala'] == '4d') & (df['nombre_sede'] == 'fiumark_palermo'), 1, 0)
-    for sede in ['fiumark_palermo', 'fiumark_quilmes', 'fiumark_chacarita']:
-        for sala in ['normal', '3d', '4d']:
-            df[sede+'_'+sala] = np.where((df['tipo_de_sala'] == sala) & (df['nombre_sede'] == sede), 1, 0)
-    #Se procesa el titulo de cada encuestado para que lo utilice el 
-    #knnimputer para calcular los missing values en la edad.
-    ##df['titulo'] = df.nombre.str.split(expand=True).iloc[:,0]
-    #Se borran columnas que no aportan datos significativos
-    borrar_columna(df, 'fila', True)
-    borrar_columna(df, 'nombre', True)
-    borrar_columna(df, 'id_ticket', True)
-    df['edad_knn'] = knn_imputer(df)
-    df.drop(['edad'],axis=1, inplace=True)
-    df.drop(['precio_ticket'],axis=1, inplace=True)
-    df = redondear_edades(df, 'edad_knn')
-    #Se dropean las columnas titulo e id_usuario que no son utiles
-    df.drop(columns=['id_usuario', 'nombre_sede', 'tipo_de_sala'], inplace=True)
-    #df.drop(columns=['id_usuario'], inplace=True)
-    return df
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def procesamiento_arboles_discretizer(df):
-    #Se indica que columnas tenian edad nula
-    #df['edad_nan'] = np.where(df['edad'].isnull(), 1, 0)
-    #Se procesa el titulo de cada encuestado para que lo utilice el 
-    #knnimputer para calcular los missing values en la edad.
-    #df['titulo'] = df.nombre.str.split(expand=True).iloc[:,0]
-    #df['edad_knn'] = knn_imputer(df)
-    #Se borran columnas que no aportan datos significativos
-    borrar_columna(df, 'fila', True)
-    borrar_columna(df, 'nombre', True)
-    borrar_columna(df, 'id_ticket', True)
-    #Se encodean las columnas categoricas
-    df = one_hot_encoding(df, 'nombre_sede')
-    df = one_hot_encoding(df, 'genero')
-    df = one_hot_encoding(df, 'tipo_de_sala')
-    #df = redondear_edades(df, 'edad_knn')
-    df.dropna(subset=['edad'], inplace=True)
-    df['edad_bins'] = kbins_discretizer(df, 'edad', 10)
-    df.dropna(subset=['precio_ticket'], inplace=True)
-    df['precio_bins'] = kbins_discretizer(df, 'precio_ticket', 5)
-    df.reset_index(inplace=True)
-    #Se dropea la edad con missing values y se redondean los valores de edad calculados
-    df.drop(['edad'],axis=1, inplace=True)
-    #df.drop(['precio_ticket'],axis=1, inplace=True)
-    df.drop(['index'],axis=1, inplace=True)
-    print(df.head())
-    #Se dropean las columnas titulo e id_usuario que no son utiles
-    df.drop(columns=['id_usuario'], inplace=True)
-    return df
+    def _bins_segun_precio(self, valor):
+        if valor == 1:
+            return 1
+        if 2 <= valor <= 3:
+            return 2
+        return 3
 
 # -------------- FUNCIONES AUXILIARES -----------------
 
