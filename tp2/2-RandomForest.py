@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.9.1
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -69,7 +69,7 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 
 # #### Metricas
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
+cv = StratifiedKFold(n_splits=5, random_state=pp.RANDOM_STATE, shuffle=True)
 scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
 scores_for_model = cross_validate(pipeline, X, y, cv=cv, scoring=scoring_metrics)
 print(f"Mean test roc auc is: {scores_for_model['test_roc_auc'].mean():.4f}")
@@ -77,6 +77,8 @@ print(f"mean test accuracy is: {scores_for_model['test_accuracy'].mean():.4f}")
 print(f"mean test precision is: {scores_for_model['test_precision'].mean():.4f}")
 print(f"mean test recall is: {scores_for_model['test_recall'].mean():.4f}")
 print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
+
+X.edad.quantile([0,0.25,0.5,0.75,1]).values
 
 # ### Modelo 2
 
@@ -86,21 +88,13 @@ print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 preprocessor = pp.PreprocessingOHE()
 model = RandomForestClassifier(random_state=pp.RANDOM_STATE, n_jobs=-1)
 
-preprocessor.fit(X)
-
-prueba = preprocessor.transform(X)
-
-prueba.isnull().any()
-
-prueba
-
 pipeline = Pipeline([("preprocessor", preprocessor), 
                      ("model", model)
                      ])
 
 # #### Metricas
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
+cv = StratifiedKFold(n_splits=5, random_state=pp.RANDOM_STATE, shuffle=True)
 scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
 scores_for_model = cross_validate(pipeline, X, y, cv=cv, scoring=scoring_metrics)
 print(f"Mean test roc auc is: {scores_for_model['test_roc_auc'].mean():.4f}")
@@ -121,15 +115,14 @@ pipeline = Pipeline([("preprocessor", preprocessor),
                      ("model", model)
                      ])
 
-# +
 from sklearn.model_selection import GridSearchCV
-params = {'model__max_depth': np.arange(1, 31), 'model__min_samples_leaf': np.arange(1, 16),
-         "model__n_estimators": [50, 75, 100, 125, 150, 200], "model__min_samples_split": np.arange(2, 16)}
-
+params = {'model__max_depth': [10, 20, 50, None], 'model__min_samples_leaf': [1, 5, 10, 15, 20],
+         "model__n_estimators": [50, 100, 400], "model__min_samples_split": [2, 5, 10, 15], 
+          "model__criterion": ["gini", "entropy"], "model__max_features": ["auto", "log2", 7, 2]}
+cv = StratifiedKFold(n_splits=5, random_state=pp.RANDOM_STATE, shuffle=True)
 gscv = GridSearchCV(
-    pipeline, params, scoring='accuracy', n_jobs=-1, cv=5, return_train_score=True
+    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
 ).fit(X, y)
-# -
 
 gscv.best_params_
 
@@ -142,7 +135,7 @@ pipeline = Pipeline([("preprocessor", preprocessor),
                      ("model", model)
                      ])
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
+cv = StratifiedKFold(n_splits=5, random_state=pp.RANDOM_STATE, shuffle=True)
 scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
 scores_for_model = cross_validate(pipeline, X, y, cv=cv, scoring=scoring_metrics)
 print(f"Mean test roc auc is: {scores_for_model['test_roc_auc'].mean():.4f}")
@@ -155,14 +148,11 @@ print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 
 # Se eligió el....
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, 
-                                                    random_state=pp.RANDOM_STATE, stratify=y)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=pp.RANDOM_STATE, stratify=y)
 
 preprocessor = pp.PreprocessingLE()
-model = RandomForestClassifier(random_state=pp.RANDOM_STATE, 
-                               n_jobs=-1, 
-                               max_depth=12, 
-                               min_samples_leaf=4)
+model = RandomForestClassifier(random_state=pp.RANDOM_STATE,
+                               n_jobs=-1)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
                      ("model", model)
@@ -174,8 +164,64 @@ y_pred = pipeline.predict(X_test)
 
 scores = [roc_auc_score, accuracy_score, precision_score, recall_score, f1_score]
 columnas = ['AUC_ROC', 'Accuracy', 'Precision', 'Recall', 'F1 Score']
-results = [s(y_pred, y_test) for s in scores]
+results = [s(y_test, y_pred) for s in scores]
 display(pd.DataFrame([results], columns=columnas).style.hide_index())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

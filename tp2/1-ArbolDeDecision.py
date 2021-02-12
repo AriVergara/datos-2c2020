@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.9.1
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -107,7 +107,7 @@ print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 # - Estimación de Hiperparametros con GridSearchCV
 
 preprocessor = pp.PreprocessingLE()
-model = tree.DecisionTreeClassifier(random_state=pp.RANDOM_STATE, n_jobs=-1)
+model = tree.DecisionTreeClassifier(random_state=pp.RANDOM_STATE)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
                      ("model", model)
@@ -147,7 +147,7 @@ print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 
 # Se eligió el....
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, 
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, 
                                                     random_state=pp.RANDOM_STATE, stratify=y)
 
 preprocessor = pp.PreprocessingOHE()
@@ -177,35 +177,48 @@ df_predecir = df_predecir[['id_usuario', 'volveria']]
  #   df_predecir.to_csv(f, sep=',', index=False)
 
 
-# ### Modelo 0
-
-# +
-def clasificar_encuestado(fila):
-    if fila['edad'] < 18:
-        acompaniantes = fila['parientes'] + fila['amigos']
-        return 1 if acompaniantes <= 3 else 0
-    if fila['genero'] == 'hombre':
-        return 0
-    if fila['tipo_de_sala'] == '4d' and fila['nombre_sede'] == 'fiumark_palermo':
-        return 0
-    return 1
 
 
-def baseline(X):
-    resultado = []
-    for nro_fila in range(len(X)):
-        resultado.append(clasificar_encuestado(df.loc[nro_fila,:]))
-    return resultado
 
 
-# -
 
-y_pred_baseline = baseline(X_test)
 
-scores = [roc_auc_score, accuracy_score, precision_score, recall_score, f1_score]
-columnas = ['AUC_ROC', 'Accuracy', 'Precision', 'Recall', 'F1 Score']
-results = [s(y_pred_baseline, y_test) for s in scores]
-display(pd.DataFrame([results], columns=columnas).style.hide_index())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
