@@ -157,6 +157,53 @@ print(f"mean test accuracy is: {scores_for_model['test_accuracy'].mean():.4f}")
 print(f"mean test precision is: {scores_for_model['test_precision'].mean():.4f}")
 print(f"mean test recall is: {scores_for_model['test_recall'].mean():.4f}")
 print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
+print(scores_for_model['test_roc_auc'])
+
+
+def our_own_cv(X, y, clf, cv_n_splits=8, random_state=117):
+    kf = StratifiedKFold(n_splits=cv_n_splits, random_state=random_state, shuffle=True)
+
+    test_accuracies = []
+    test_roc_aucs = []
+    test_precisions = []
+    test_recalls = []
+    test_f1_scores = []
+    for fold_idx, (train_index, test_index) in enumerate(kf.split(X, y)):
+        y_test_cv = y[test_index]
+        
+        clf.fit(X.loc[train_index,], y[train_index])
+        y_predict_cv = clf.predict(X.loc[test_index,])
+
+        test_roc_auc = roc_auc_score(y_test_cv, clf.predict_proba(X.loc[test_index,])[:, 1])
+        test_roc_aucs.append(test_roc_auc)
+
+        test_accuracy = accuracy_score(y_test_cv, y_predict_cv)
+        test_accuracies.append(test_accuracy)
+
+        test_precision = precision_score(y_test_cv, y_predict_cv)
+        test_precisions.append(test_precision)
+
+        test_recall = recall_score(y_test_cv, y_predict_cv)
+        test_recalls.append(test_recall)
+
+        test_f1_score = f1_score(y_test_cv, y_predict_cv)
+        test_f1_scores.append(test_f1_score)
+
+    print(f"mean test roc auc is: {np.mean(test_roc_aucs):.4f}")
+    print(f"mean test accuracy is: {np.mean(test_accuracies):.4f}")
+    print(f"mean test precision is: {np.mean(test_precisions):.4f}")
+    print(f"mean test recall is: {np.mean(test_recalls):.4f}")
+    print(f"mean test f1_score is: {np.mean(test_f1_scores):.4f}")
+    print(test_roc_aucs)
+
+
+our_own_cv(X, y, pipeline, cv_n_splits=8, random_state=pp.RANDOM_STATE)
+
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import make_scorer
+scores_for_model = cross_val_score(pipeline, X, y, cv=cv, scoring=make_scorer(roc_auc_score))
+
+scores_for_model.mean()
 
 # ### Metricas finales
 
@@ -178,10 +225,12 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 pipeline.fit(X_train, y_train)
 
 y_pred = pipeline.predict(X_test)
+y_pred_proba = pipeline.predict_proba(X_test)[:, 1]
 
-scores = [roc_auc_score, accuracy_score, precision_score, recall_score, f1_score]
+scores = [accuracy_score, precision_score, recall_score, f1_score]
 columnas = ['AUC_ROC', 'Accuracy', 'Precision', 'Recall', 'F1 Score']
-results = [s(y_test, y_pred) for s in scores]
+results = [roc_auc_score(y_test, y_pred_proba)]
+results += [s(y_test, y_pred) for s in scores]
 display(pd.DataFrame([results], columns=columnas).style.hide_index())
 
 # ### Predicción HoldOut
@@ -193,3 +242,5 @@ df_predecir = df_predecir[['id_usuario', 'volveria']]
 
 with open('1-ArbolDeDecision.csv', 'w') as f:
     df_predecir.to_csv(f, sep=',', index=False)
+
+

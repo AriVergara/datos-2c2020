@@ -161,7 +161,7 @@ print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 
 # Se eligió el....
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=pp.RANDOM_STATE, stratify=y)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=pp.RANDOM_STATE, stratify=y)
 
 preprocessor = pp.PreprocessingLE()
 model = RandomForestClassifier(random_state=pp.RANDOM_STATE, 
@@ -177,10 +177,12 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 pipeline.fit(X_train, y_train)
 
 y_pred = pipeline.predict(X_test)
+y_pred_proba = pipeline.predict_proba(X_test)[:, 1]
 
-scores = [roc_auc_score, accuracy_score, precision_score, recall_score, f1_score]
+scores = [accuracy_score, precision_score, recall_score, f1_score]
 columnas = ['AUC_ROC', 'Accuracy', 'Precision', 'Recall', 'F1 Score']
-results = [s(y_test, y_pred) for s in scores]
+results = [roc_auc_score(y_test, y_pred_proba)]
+results += [s(y_test, y_pred) for s in scores]
 display(pd.DataFrame([results], columns=columnas).style.hide_index())
 
 

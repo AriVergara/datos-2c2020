@@ -51,7 +51,6 @@ class PreprocessingLE(BaseEstimator, TransformerMixin):
         X["edad"] = X["edad"].fillna(self.mean_edad)
         X["edad_bins"] = X["edad"].apply(self._bins_segun_edad_2)
         X = X.drop(columns=["edad"], axis=1, inplace=False)
-
         X['nombre_sede'] = self.le_nombre_sede.transform(X['nombre_sede'].astype(str))
         
         X['tipo_de_sala'] = self.le_tipo_sala.transform(X['tipo_de_sala'].astype(str))
