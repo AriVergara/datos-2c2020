@@ -6,7 +6,8 @@ from sklearn.impute import KNNImputer
 from sklearn.preprocessing import (
     KBinsDiscretizer,
     LabelEncoder,
-    OneHotEncoder
+    OneHotEncoder,
+    StandardScaler
 )
 from category_encoders import TargetEncoder
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -211,6 +212,106 @@ class PreprocessingOHE_2(BaseEstimator, TransformerMixin):
 
         X["precio_ticket_bins"] = X["precio_ticket"].apply(self._bins_segun_precio)
         return X
+    
+    def _bins_segun_precio(self, valor):
+        if valor == 1:
+            return 1
+        if 2 <= valor <= 3:
+            return 2
+        return 3
+    
+class PreprocessingSE(BaseEstimator, TransformerMixin):
+    """
+    -Elimina columnas sin infromación valiosa (fila, id_usuario, id_ticket).
+    -Encodea variables categóricas mediante OneHotEncoding (genero, nombre_sala, tipo_de_sala)
+    -Completa los missing values de la columna edad con la media.
+    -Convierte en bins los valores de la columna precio_ticket.
+    -Escala los valores a media 0 y desvio estandar 1 con StandardScaler.
+    """
+    def __init__(self):
+        super().__init__()
+        self.mean_edad = 0
+        self.scaler = StandardScaler()
+    
+    def fit(self, X, y=None):
+        self.mean_edad = X["edad"].mean()
+        self.scaler.fit(self._transform(X))
+        return self
+    
+    def _transform(self, X):
+        X.loc[:, "fila_isna"] = X["fila"].isna().astype(int)
+        X = X.drop(columns=["fila"], axis=1, inplace=False)
+        X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
+        X = X.drop(columns=["nombre"], axis=1, inplace=False)
+        X = X.drop(columns=["id_ticket"], axis=1, inplace=False)
+
+        X["edad_isna"] = X["edad"].isna().astype(int)
+        X["edad"] = X["edad"].fillna(self.mean_edad)
+        
+        X = pd.get_dummies(X, columns=['genero'], dummy_na=True, drop_first=True) 
+        
+        X = pd.get_dummies(X, columns=['tipo_de_sala'], dummy_na=True, drop_first=True) 
+        
+        X = pd.get_dummies(X, columns=['nombre_sede'], dummy_na=True, drop_first=True)
+
+        X["precio_ticket_bins"] = X["precio_ticket"].apply(self._bins_segun_precio)
+        return X
+
+    def transform(self, X):
+        X = self._transform(X)
+        return self.scaler.transform(X)
+    
+    def _bins_segun_precio(self, valor):
+        if valor == 1:
+            return 1
+        if 2 <= valor <= 3:
+            return 2
+        return 3
+    
+class PreprocessingSE_2(BaseEstimator, TransformerMixin):
+    """
+    -Elimina columnas sin infromación valiosa (fila, id_usuario, id_ticket).
+    -Encodea variables categóricas mediante LabelEncoding (genero, nombre_sala, tipo_de_sala)
+    -Completa los missing values de la columna edad con la media.
+    -Escala los valores a media 0 y desvio estandar 1 con StandardScaler.
+    """
+    def __init__(self):
+        super().__init__()
+        self.le_tipo_sala = LabelEncoder()
+        self.le_nombre_sede = LabelEncoder()
+        self.le_genero = LabelEncoder()
+        self.mean_edad = 0
+        self.scaler = StandardScaler()
+    
+    def fit(self, X, y=None):
+        self.mean_edad = X["edad"].mean()   
+        self.le_tipo_sala.fit(X['tipo_de_sala'].astype(str))
+        self.le_nombre_sede.fit(X['nombre_sede'].astype(str))
+        self.le_genero.fit(X['genero'].astype(str))
+        self.scaler.fit(self._transform(X))
+        return self
+    
+    def _transform(self, X):
+        X.loc[:, "fila_isna"] = X["fila"].isna().astype(int)
+        X = X.drop(columns=["fila"], axis=1, inplace=False)
+        X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
+        X = X.drop(columns=["nombre"], axis=1, inplace=False)
+        X = X.drop(columns=["id_ticket"], axis=1, inplace=False)
+
+        X["edad_isna"] = X["edad"].isna().astype(int)
+        X["edad"] = X["edad"].fillna(self.mean_edad)
+        
+        X['nombre_sede'] = self.le_nombre_sede.transform(X['nombre_sede'].astype(str))
+        
+        X['tipo_de_sala'] = self.le_tipo_sala.transform(X['tipo_de_sala'].astype(str))
+        
+        X['genero'] = self.le_genero.transform(X['genero'].astype(str))
+        
+        return X
+
+    def transform(self, X):
+        X = self._transform(X)
+        return self.scaler.transform(X)
     
     def _bins_segun_precio(self, valor):
         if valor == 1:
