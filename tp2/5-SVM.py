@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.9.1
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -249,7 +249,5 @@ df_predecir = pd.read_csv('https://drive.google.com/uc?export=download&id=1I980-
 df_predecir['volveria'] = pipeline.predict(df_predecir)
 df_predecir = df_predecir[['id_usuario', 'volveria']]
 
-with open('3-SVM.csv', 'w') as f:
+with open('Predicciones/5-SVM.csv', 'w') as f:
     df_predecir.to_csv(f, sep=',', index=False)
-
-
