@@ -9,7 +9,6 @@ from sklearn.preprocessing import (
     OneHotEncoder,
     StandardScaler
 )
-from category_encoders import TargetEncoder
 from sklearn.base import BaseEstimator, TransformerMixin
 
 
@@ -259,7 +258,7 @@ class PreprocessingSE(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         X = self._transform(X)
-        return self.scaler.transform(X)
+        return pd.DataFrame(self.scaler.transform(X), index=X.index, columns=X.columns)
     
     def _bins_segun_precio(self, valor):
         if valor == 1:
