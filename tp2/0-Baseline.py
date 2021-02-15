@@ -39,9 +39,11 @@ df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_
 X = df.drop(columns="volveria", axis=1, inplace=False)
 y = df["volveria"]
 
+X[~(X["genero"] == "hombre") & ~(X["tipo_de_sala"] == "4d")].tipo_de_sala.value_counts()
+
 # ### Modelo 0
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, 
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, 
                                                     random_state=pp.RANDOM_STATE, stratify=y)
 
 
@@ -56,20 +58,68 @@ def clasificar_encuestado(fila):
         return 0
     return 1
 
+def _probabilidades_grupo(X_grupo):
+    cantidad_elementos = len(X_grupo)
+    cantidad_positivos = len(X_grupo[X_grupo["volveria"] == 1])
+    prob_volveria = cantidad_positivos/float(cantidad_elementos)
+    prob_no_volveria = (cantidad_elementos - cantidad_positivos)/float(cantidad_elementos)
+    return [prob_no_volveria, prob_volveria]
+
+def clasificar_encuestado_proba(fila, X):
+    if fila['edad'] < 18:
+        X_grupo = X[X["edad"] < 18]
+        
+        if fila['acompaniantes'] <= 3:
+            X_grupo = X_grupo[X_grupo["acompaniantes"] <= 3]
+            return _probabilidades_grupo(X_grupo)
+        else:
+            X_grupo = X_grupo[X_grupo["acompaniantes"] > 3]
+            return _probabilidades_grupo(X_grupo)
+    
+    if fila['genero'] == 'hombre':
+        X_grupo = X[X["genero"] == 'hombre']
+        return _probabilidades_grupo(X_grupo)
+    
+    if fila['tipo_de_sala'] == '4d' and fila['nombre_sede'] == 'fiumark_palermo':
+        X_grupo = X[(X["genero"] == 'mujer') & 
+                    (X['tipo_de_sala'] == '4d') & 
+                    (X['nombre_sede'] == 'fiumark_palermo')]
+        return _probabilidades_grupo(X_grupo)
+    
+    X_grupo = X[(X["genero"] == 'mujer') & 
+                ~(X['tipo_de_sala'] == '4d') & 
+                ~(X['nombre_sede'] == 'fiumark_palermo')]
+    return _probabilidades_grupo(X_grupo)
 
 def baseline(X):
     resultado = []
     for indice in X.index:
-        resultado.append(clasificar_encuestado(df.loc[indice,:]))
+        resultado.append(clasificar_encuestado(X.loc[indice,:]))
+    return resultado
+
+def baseline_proba(X):
+    X = X.copy()
+    X['acompaniantes'] = X['parientes'] + X['amigos']         
+    resultado = []
+    for indice in X.index:
+        clasificacion = clasificar_encuestado_proba(X.loc[indice,:], X)
+        resultado.append(clasificacion)
     return resultado
 
 
-# -
-
+# +
 y_pred_baseline = baseline(X_test)
-scores = [roc_auc_score, accuracy_score, precision_score, recall_score, f1_score]
+X_test["volveria"] = y_test
+y_pred_proba = baseline_proba(X_test)
+y_pred_proba = np.array(y_pred_proba)[:, 1]
+
+scores = [accuracy_score, precision_score, recall_score, f1_score]
 columnas = ['AUC_ROC', 'Accuracy', 'Precision', 'Recall', 'F1 Score']
-results = [s(y_test, y_pred_baseline) for s in scores]
+
+results = [roc_auc_score(y_test, y_pred_proba)]
+
+results += [s(y_test, y_pred_baseline) for s in scores]
 display(pd.DataFrame([results], columns=columnas).style.hide_index())
+# -
 
 

@@ -209,7 +209,7 @@ scores_for_model.mean()
 
 # Se eligió el [Modelo 3](#Modelo-3) en base a los resultados obtenidos mediante `cross_validation`.
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, 
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, 
                                                     random_state=pp.RANDOM_STATE, stratify=y)
 
 preprocessor = pp.PreprocessingLE()
@@ -240,7 +240,5 @@ df_predecir = pd.read_csv('https://drive.google.com/uc?export=download&id=1I980-
 df_predecir['volveria'] = pipeline.predict(df_predecir)
 df_predecir = df_predecir[['id_usuario', 'volveria']]
 
-with open('1-ArbolDeDecision.csv', 'w') as f:
+with open('Predicciones/1-ArbolDeDecision.csv', 'w') as f:
     df_predecir.to_csv(f, sep=',', index=False)
-
-
