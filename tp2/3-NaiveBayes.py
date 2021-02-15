@@ -123,6 +123,7 @@ print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 
 # - Se transforman las variables numéricas (precio_ticket y edad) en bins para poder utilizar solamente CategoricalNB.
 # - Se realizan las mismas transformaciones que en el modelo anterior sobre las variables categóricas.
+# - Se eliminaron las variables amigos y parientes debido a que no mejoraban el score del modelo.
 
 class PreprocessingCategoricalNB2(BaseEstimator, TransformerMixin):
     """
@@ -284,12 +285,44 @@ print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 # ### Modelo 4
 
 # - Se combina un CategoricalNB con un GaussianNB usando un GaussianNB que toma la salida de los dos modelos anteriores para realizar la predicción. Para ello se hace un ensamble de tipo Stacking.
+# - Se buscan mejores hiperparametros que los default con un GridSearchCV para ambos NB
+
+# #### Hiperparámetros
 
 pipeline_gaussian = Pipeline([("preprocessor", PreprocessingGaussianNB1()), 
                               ("model", GaussianNB())
                      ])
 pipeline_categorical = Pipeline([("preprocessor", PreprocessingCategoricalNB1()), 
                               ("model", CategoricalNB())
+                     ])
+
+# +
+from sklearn.model_selection import GridSearchCV
+params = {'model__alpha': np.arange(1, 10, 1)}
+
+cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
+gscv_categorical = GridSearchCV(
+    pipeline_categorical, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
+).fit(X, y)
+print(gscv_categorical.best_score_)
+print(gscv_categorical.best_params_)
+
+# +
+params = {'model__var_smoothing': [1e-9, 1e-8, 1e-7, 1e-6, 1e-3, 5e-3, 1e-2, 3e-2, 5e-2, 0.1, 0.3]}
+
+cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
+gscv_gaussian = GridSearchCV(
+    pipeline_gaussian, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
+).fit(X, y)
+print(gscv_gaussian.best_score_)
+print(gscv_gaussian.best_params_)
+# -
+
+pipeline_gaussian = Pipeline([("preprocessor", PreprocessingGaussianNB1()), 
+                              ("model", GaussianNB(var_smoothing=0.01))
+                     ])
+pipeline_categorical = Pipeline([("preprocessor", PreprocessingCategoricalNB1()), 
+                              ("model", CategoricalNB(alpha=2))
                      ])
 
 # +
@@ -320,10 +353,10 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random
 
 # +
 pipeline_gaussian = Pipeline([("preprocessor", PreprocessingGaussianNB1()), 
-                              ("model", GaussianNB())
+                              ("model", GaussianNB(var_smoothing=0.01))
                      ])
 pipeline_categorical = Pipeline([("preprocessor", PreprocessingCategoricalNB1()), 
-                              ("model", CategoricalNB())
+                              ("model", CategoricalNB(alpha=2))
                      ])
 estimadores = [('categorical_nb', pipeline_categorical), ('gaussian_nb', pipeline_gaussian)]
 cv = StratifiedKFold(n_splits=2, random_state=pp.RANDOM_STATE, shuffle=True)
