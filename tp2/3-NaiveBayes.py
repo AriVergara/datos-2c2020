@@ -50,60 +50,11 @@ df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_
 X = df.drop(columns="volveria", axis=1, inplace=False)
 y = df["volveria"]
 
-
 # ### Modelo 1
 
 # - Se utilizan únicamente las variables categóricas genero, tipo_sala y nombre_sede para realizar la clasificación
 
-class PreprocessingCategoricalNB1(BaseEstimator, TransformerMixin):
-    """
-        -Elimina columnas sin infromación valiosa (fila, id_usuario, id_ticket) y con valores 
-            continuos o discretos(parientes, amigos, edad y precio_ticket).
-        -Encodea variables categóricas mediante LabelEncoding (genero, nombre_sala, tipo_de_sala)
-        -Agrega columnas edad_isna, fila_isna, va_con_amigos, va_con_parientes
-    """
-    def __init__(self):
-        super().__init__()
-        self.le_tipo_sala = LabelEncoder()
-        self.le_nombre_sede = LabelEncoder()
-        self.le_genero = LabelEncoder()
-        self._moda_nombre_sede = ""
-    
-    def fit(self, X, y=None):
-        self.le_tipo_sala.fit(X['tipo_de_sala'].astype(str))
-        self.le_nombre_sede.fit(X['nombre_sede'].astype(str))
-        self.le_genero.fit(X['genero'].astype(str))
-        self._moda_nombre_sede = self._obtener_moda_nombre_sede(X)
-        return self
-
-    def transform(self, X):
-        X = X.copy()
-        X['tipo_de_sala_encoded'] = self.le_tipo_sala.transform(X['tipo_de_sala'].astype(str))
-        X = X.drop(columns=["tipo_de_sala"], axis=1, inplace=False)
-        
-        X['genero_encoded'] = self.le_genero.transform(X['genero'].astype(str))
-        X = X.drop(columns=["genero"], axis=1, inplace=False)
-        
-        X["nombre_sede"] = X["nombre_sede"].fillna(self._moda_nombre_sede)
-        X['nombre_sede_encoded'] = self.le_nombre_sede.transform(X['nombre_sede'].astype(str))
-        X = X.drop(columns=["nombre_sede"], axis=1, inplace=False)
-        
-        X = X.drop(columns=["fila"], axis=1, inplace=False)
-        X = X.drop(columns=["amigos"], axis=1, inplace=False)
-        X = X.drop(columns=["parientes"], axis=1, inplace=False)
-        X = X.drop(columns=["edad"], axis=1, inplace=False)
-        X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
-        X = X.drop(columns=["nombre"], axis=1, inplace=False)
-        X = X.drop(columns=["id_ticket"], axis=1, inplace=False)
-        X = X.drop(columns=["precio_ticket"], axis=1, inplace=False)
-        
-        return X
-    
-    def _obtener_moda_nombre_sede(self, X):
-        return X.nombre_sede.value_counts().index[0]
-
-
-pipeline_1 = Pipeline([("preprocessor", PreprocessingCategoricalNB1()), 
+pipeline_1 = Pipeline([("preprocessor", pp.PreprocessingCategoricalNB1()), 
                      ("model", CategoricalNB())
                      ])
 
@@ -118,103 +69,13 @@ print(f"mean test precision is: {scores_for_model['test_precision'].mean():.4f}"
 print(f"mean test recall is: {scores_for_model['test_recall'].mean():.4f}")
 print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 
-
 # ### Modelo 2
 
 # - Se transforman las variables numéricas (precio_ticket y edad) en bins para poder utilizar solamente CategoricalNB.
 # - Se realizan las mismas transformaciones que en el modelo anterior sobre las variables categóricas.
 # - Se eliminaron las variables amigos y parientes debido a que no mejoraban el score del modelo.
 
-class PreprocessingCategoricalNB2(BaseEstimator, TransformerMixin):
-    """
-        -Elimina columnas sin infromación valiosa (fila, id_usuario, id_ticket) y con valores 
-            continuos o discretos(parientes, amigos, edad y precio_ticket).
-        -Encodea variables categóricas mediante LabelEncoding (genero, nombre_sala, tipo_de_sala)
-        -Agrega columnas va_con_amigos, va_con_parientes
-    """
-    def __init__(self):
-        super().__init__()
-        self._valores_fila = []
-        self.le_tipo_sala = LabelEncoder()
-        self.le_nombre_sede = LabelEncoder()
-        self.le_genero = LabelEncoder()
-    
-    def fit(self, X, y=None):
-        self._valores_fila = X.fila.dropna().unique()
-        self.le_tipo_sala.fit(X['tipo_de_sala'].astype(str))
-        self.le_nombre_sede.fit(X['nombre_sede'].astype(str))
-        self.le_genero.fit(X['genero'].astype(str))
-        self._moda_nombre_sede = self._obtener_moda_nombre_sede(X)
-        return self
-
-    def transform(self, X):
-        X = X.copy()
-        X['tipo_de_sala_encoded'] = self.le_tipo_sala.transform(X['tipo_de_sala'].astype(str))
-        X = X.drop(columns=["tipo_de_sala"], axis=1, inplace=False)
-        
-        X['genero_encoded'] = self.le_genero.transform(X['genero'].astype(str))
-        X = X.drop(columns=["genero"], axis=1, inplace=False)
-        
-        X["nombre_sede"] = X["nombre_sede"].fillna(self._moda_nombre_sede)
-        X['nombre_sede_encoded'] = self.le_nombre_sede.transform(X['nombre_sede'].astype(str))
-        X = X.drop(columns=["nombre_sede"], axis=1, inplace=False)
-        
-        X['edad_bins'] = X['edad'].apply(self._bins_segun_edad_cuantiles)
-        X = X.drop(columns=["edad"], axis=1, inplace=False)
-        
-        X['precio_ticket_bins'] = X['precio_ticket'].apply(self._bins_segun_precio)
-        X = X.drop(columns=["precio_ticket"], axis=1, inplace=False)
-        
-        X = X.drop(columns=["fila"], axis=1, inplace=False)
-        X = X.drop(columns=["amigos"], axis=1, inplace=False)
-        X = X.drop(columns=["parientes"], axis=1, inplace=False)
-        X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
-        X = X.drop(columns=["nombre"], axis=1, inplace=False)
-        X = X.drop(columns=["id_ticket"], axis=1, inplace=False)
-        
-        return X
-    
-    def reemplazar_valores_de_fila_desconocidos(self, fila):
-        if fila not in self._valores_fila:
-            return np.nan()
-        return fila
-    
-    def _bins_segun_precio(self, valor):
-        if valor == 1:
-            return 1
-        if 2 <= valor <= 3:
-            return 2
-        return 3
-    
-    def _bins_segun_edad(self, edad): 
-        if np.isnan(edad):
-            return 0
-        if edad <= 18:
-            return 1
-        if 18 < edad <= 30:
-            return 2
-        if 30 < edad <= 40:
-            return 3
-        if 40 < edad <= 70:
-            return 4
-        return 5
-    
-    def _bins_segun_edad_cuantiles(self, edad):
-        if np.isnan(edad):
-            return 0
-        if edad <= 23:
-            return 1
-        if 23 < edad <= 31:
-            return 2
-        if 31 < edad <= 41:
-            return 3
-        return 4
-    
-    def _obtener_moda_nombre_sede(self, X):
-        return X.nombre_sede.value_counts().index[0]
-
-
-pipeline_2 = Pipeline([("preprocessor", PreprocessingCategoricalNB2()), 
+pipeline_2 = Pipeline([("preprocessor", pp.PreprocessingCategoricalNB2()), 
                      ("model", CategoricalNB())
                      ])
 
@@ -229,45 +90,12 @@ print(f"mean test precision is: {scores_for_model['test_precision'].mean():.4f}"
 print(f"mean test recall is: {scores_for_model['test_recall'].mean():.4f}")
 print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 
-
 # ### Modelo 3
 
 # - Se utilizan unicamente las variables continuas y discretas
 # - Se usa un GaussianNB
 
-class PreprocessingGaussianNB1(BaseEstimator, TransformerMixin):
-    """
-        - Elimina columnas sin infromación valiosa (fila, id_usuario, id_ticket) y con valores 
-            categoricos (genero, fila, tipo_de_sala, nombre_sede).
-        - Se agrega la columna acompaniantes y se eliminan parientes y amigos.
-    """
-    def __init__(self):
-        super().__init__()
-        self._mean_edad = 0
-    
-    def fit(self, X, y=None):
-        self._mean_edad = X["edad"].mean()
-        return self
-
-    def transform(self, X):
-        X = X.copy()
-        X["edad"] = X["edad"].fillna(self._mean_edad)
-        X["acompaniantes"] = X["parientes"] + X["amigos"]
-        
-        X = X.drop(columns=["parientes"], axis=1, inplace=False)
-        X = X.drop(columns=["amigos"], axis=1, inplace=False)
-        X = X.drop(columns=["genero"], axis=1, inplace=False)
-        X = X.drop(columns=["tipo_de_sala"], axis=1, inplace=False)
-        X = X.drop(columns=["nombre_sede"], axis=1, inplace=False)
-        X = X.drop(columns=["fila"], axis=1, inplace=False)
-        X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
-        X = X.drop(columns=["nombre"], axis=1, inplace=False)
-        X = X.drop(columns=["id_ticket"], axis=1, inplace=False)
-        
-        return X
-
-
-pipeline_3 = Pipeline([("preprocessor", PreprocessingGaussianNB1()), 
+pipeline_3 = Pipeline([("preprocessor", pp.PreprocessingGaussianNB1()), 
                      ("model", GaussianNB())
                      ])
 
@@ -289,10 +117,10 @@ print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 
 # #### Hiperparámetros
 
-pipeline_gaussian = Pipeline([("preprocessor", PreprocessingGaussianNB1()), 
+pipeline_gaussian = Pipeline([("preprocessor", pp.PreprocessingGaussianNB1()), 
                               ("model", GaussianNB())
                      ])
-pipeline_categorical = Pipeline([("preprocessor", PreprocessingCategoricalNB1()), 
+pipeline_categorical = Pipeline([("preprocessor", pp.PreprocessingCategoricalNB1()), 
                               ("model", CategoricalNB())
                      ])
 
@@ -318,10 +146,10 @@ print(gscv_gaussian.best_score_)
 print(gscv_gaussian.best_params_)
 # -
 
-pipeline_gaussian = Pipeline([("preprocessor", PreprocessingGaussianNB1()), 
+pipeline_gaussian = Pipeline([("preprocessor", pp.PreprocessingGaussianNB1()), 
                               ("model", GaussianNB(var_smoothing=0.01))
                      ])
-pipeline_categorical = Pipeline([("preprocessor", PreprocessingCategoricalNB1()), 
+pipeline_categorical = Pipeline([("preprocessor", pp.PreprocessingCategoricalNB1()), 
                               ("model", CategoricalNB(alpha=2))
                      ])
 
@@ -352,10 +180,10 @@ print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=pp.RANDOM_STATE, stratify=y)
 
 # +
-pipeline_gaussian = Pipeline([("preprocessor", PreprocessingGaussianNB1()), 
+pipeline_gaussian = Pipeline([("preprocessor", pp.PreprocessingGaussianNB1()), 
                               ("model", GaussianNB(var_smoothing=0.01))
                      ])
-pipeline_categorical = Pipeline([("preprocessor", PreprocessingCategoricalNB1()), 
+pipeline_categorical = Pipeline([("preprocessor", pp.PreprocessingCategoricalNB1()), 
                               ("model", CategoricalNB(alpha=2))
                      ])
 estimadores = [('categorical_nb', pipeline_categorical), ('gaussian_nb', pipeline_gaussian)]
