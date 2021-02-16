@@ -150,9 +150,9 @@ gscv = GridSearchCV(
 ).fit(X, y)
 # -
 
-# ### Metricas finales
+# ### Métricas finales
 
-# Se eligió el [Modelo 1](#Modelo-1) en base a los resultados obtenidos mediante `cross_validation`.
+# Se eligió el [Modelo 4](#Modelo-4) en base a los resultados obtenidos mediante `cross_validation`.
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, 
                                                     random_state=pp.RANDOM_STATE, stratify=y)

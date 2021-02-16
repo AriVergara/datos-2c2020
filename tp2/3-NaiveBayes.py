@@ -29,6 +29,7 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 from sklearn.pipeline import Pipeline
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.ensemble import StackingClassifier
 
 # +
 import random
@@ -173,7 +174,7 @@ print(f"mean test precision is: {scores_for_model['test_precision'].mean():.4f}"
 print(f"mean test recall is: {scores_for_model['test_recall'].mean():.4f}")
 print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 
-# ### Metricas finales
+# ### Métricas finales
 
 # Se eligió el modelo que utiliza un ensamble de Stacking dado que, si bien el CV dió un poco peor que en el primer modelo del notebook, la diferencia es despreciable. Además al ser un ensamble, el algoritmo puede generalizar mejor.
 

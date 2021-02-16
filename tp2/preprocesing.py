@@ -18,6 +18,21 @@ RANDOM_STATE = 117
 
 TEST_SIZE = 0.2
 
+class EliminarFilasSinInformacionTransformer(BaseEstimator, TransformerMixin):
+    """
+        Elimina columnas sin infromación valiosa (fila, id_usuario, id_ticket).
+    """
+    def fit(self, X, y=None):
+        return self
+    
+    def transform(self, X):
+        X = X.copy()
+        X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
+        X = X.drop(columns=["nombre"], axis=1, inplace=False)
+        X = X.drop(columns=["id_ticket"], axis=1, inplace=False)
+        return X
+    
+
 
 class PreprocessingLE(BaseEstimator, TransformerMixin):
     """
@@ -52,7 +67,7 @@ class PreprocessingLE(BaseEstimator, TransformerMixin):
 
         X["edad_isna"] = X["edad"].isna().astype(int)
         X["edad"] = X["edad"].fillna(self.mean_edad)
-        X["edad_bins"] = X["edad"].apply(self._bins_segun_edad_2)
+        X["edad_bins"] = X["edad"].apply(self._bins_segun_edad)
         X = X.drop(columns=["edad"], axis=1, inplace=False)
         
         X["nombre_sede_isna"] = X["nombre_sede"].isna().astype(int)
@@ -75,15 +90,6 @@ class PreprocessingLE(BaseEstimator, TransformerMixin):
         return 3
     
     def _bins_segun_edad(self, edad): 
-        if edad <= 20:
-            return 1
-        if 20 < edad <= 30:
-            return 2
-        if 30 < edad <= 40:
-            return 3
-        return 4
-    
-    def _bins_segun_edad_2(self, edad): 
         if edad <= 18:
             return 1
         if 18 < edad <= 30:

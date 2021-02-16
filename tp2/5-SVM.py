@@ -73,8 +73,9 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 # +
 params = {'model__C': np.arange(1, 150, 25), 'model__gamma': ['scale', 'auto'] + list(np.arange(1, 20))}
 
+cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
 rgscv = RandomizedSearchCV(
-    pipeline, params, n_iter=50, scoring='roc_auc', n_jobs=-1, cv=5, return_train_score=True
+    pipeline, params, n_iter=50, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
 ).fit(X, y)
 # -
 
@@ -82,6 +83,7 @@ rgscv.best_score_
 
 rgscv.best_params_
 
+preprocessor = pp.PreprocessingSE()
 model = SVC(kernel='rbf', random_state=pp.RANDOM_STATE, C=1, gamma='scale')
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
@@ -90,7 +92,7 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 
 # #### Metricas
 
-cv = StratifiedKFold(n_splits=5, random_state=pp.RANDOM_STATE, shuffle=True)
+cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
 scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
 scores_for_model = cross_validate(pipeline, X, y, cv=cv, scoring=scoring_metrics)
 print(f"Mean test roc auc is: {scores_for_model['test_roc_auc'].mean():.4f}")
@@ -117,8 +119,9 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 params = {'model__C': np.arange(1, 150, 25), 'model__degree': np.arange(1, 5), 
           'model__gamma': np.arange(1, 150, 25), 'model__coef0': np.arange(1, 150, 25)}
 
+cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
 rgscv = RandomizedSearchCV(
-    pipeline, params, n_iter=10, scoring='roc_auc', n_jobs=-1, cv=5, return_train_score=True
+    pipeline, params, n_iter=10, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
 ).fit(X, y)
 # -
 
@@ -155,7 +158,7 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 from sklearn.model_selection import GridSearchCV
 params = {'model__C': np.arange(1, 250, 10)}
 
-cv = StratifiedKFold(n_splits=5, random_state=pp.RANDOM_STATE, shuffle=True)
+cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
 gscv = GridSearchCV(
     pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
 ).fit(X, y)
@@ -168,7 +171,7 @@ gscv.best_score_
 # +
 params = {'model__C': np.arange(30, 60)}
 
-cv = StratifiedKFold(n_splits=5, random_state=pp.RANDOM_STATE, shuffle=True)
+cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
 gscv = GridSearchCV(
     pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
 ).fit(X, y)
@@ -178,11 +181,15 @@ gscv.best_params_
 
 gscv.best_score_
 
-model = model = SVC(kernel='linear', random_state=pp.RANDOM_STATE, C=51)
+preprocessor = pp.PreprocessingSE()
+model = SVC(kernel='linear', random_state=pp.RANDOM_STATE, C=50)
+
+# +
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
                      ("model", model)
                      ])
+# -
 
 cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
 scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
@@ -221,7 +228,7 @@ print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 
 # Se eligió el [Modelo 1](#Modelo-1) en base a los resultados obtenidos mediante `cross_validation`.
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.150, 
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, 
                                                     random_state=pp.RANDOM_STATE, stratify=y)
 
 preprocessor = pp.PreprocessingSE()
@@ -235,6 +242,12 @@ pipeline.fit(X_train, y_train)
 
 y_pred = pipeline.predict(X_test)
 y_pred_proba = pipeline.predict_proba(X_test)[:, 1]
+
+scores = [accuracy_score, precision_score, recall_score, f1_score]
+columnas = ['AUC_ROC', 'Accuracy', 'Precision', 'Recall', 'F1 Score']
+results = [roc_auc_score(y_test, y_pred_proba)]
+results += [s(y_test, y_pred) for s in scores]
+display(pd.DataFrame([results], columns=columnas).style.hide_index())
 
 scores = [accuracy_score, precision_score, recall_score, f1_score]
 columnas = ['AUC_ROC', 'Accuracy', 'Precision', 'Recall', 'F1 Score']
