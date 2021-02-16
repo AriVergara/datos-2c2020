@@ -50,11 +50,11 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 params = {'model__C': np.arange(1, 150, 25), 'model__gamma': ['scale', 'auto'] + list(np.arange(1, 20))}
 
 cv = utils.kfold_for_cross_validation()
-rgscv = RandomizedSearchCV(
-    pipeline, params, n_iter=50, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
-).fit(X, y)
-print(rgscv.best_score_)
-print(rgscv.best_params_)
+#rgscv = RandomizedSearchCV(
+#    pipeline, params, n_iter=50, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
+#).fit(X, y)
+#print(rgscv.best_score_)
+#print(rgscv.best_params_)
 # -
 
 preprocessor = pp.PreprocessingSE()
@@ -86,11 +86,11 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 params = {'model__C': np.arange(1, 150, 10), 'model__degree': np.arange(1, 3)}
 
 cv = utils.kfold_for_cross_validation()
-rgscv = RandomizedSearchCV(
-    pipeline, params, n_iter=30, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
-).fit(X, y)
-print(rgscv.best_score_)
-print(rgscv.best_params_)
+#rgscv = RandomizedSearchCV(
+#    pipeline, params, n_iter=30, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
+#).fit(X, y)
+#print(rgscv.best_score_)
+#print(rgscv.best_params_)
 # -
 
 model = SVC(kernel='poly', random_state=pp.RANDOM_STATE, C=1, degree=2, probability=True)
@@ -103,11 +103,11 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 params = {'model__gamma': ['scale', 'auto'], 'model__coef0': np.arange(1, 150, 25)}
 
 cv = utils.kfold_for_cross_validation()
-rgscv = GridSearchCV(
-    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
-).fit(X, y)
-print(rgscv.best_score_)
-print(rgscv.best_params_)
+#rgscv = GridSearchCV(
+#    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
+#).fit(X, y)
+#print(rgscv.best_score_)
+#print(rgscv.best_params_)
 # -
 
 preprocessor = pp.PreprocessingSE()
@@ -141,21 +141,21 @@ from sklearn.model_selection import GridSearchCV
 params = {'model__C': np.arange(1, 250, 10)}
 
 cv = utils.kfold_for_cross_validation()
-gscv = GridSearchCV(
-    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
-).fit(X, y)
-print(gscv.best_score_)
-print(gscv.best_params_)
+#gscv = GridSearchCV(
+#    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
+#).fit(X, y)
+#print(gscv.best_score_)
+#print(gscv.best_params_)
 
 # +
 params = {'model__C': np.arange(30, 60)}
 
 cv = utils.kfold_for_cross_validation()
-gscv = GridSearchCV(
-    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
-).fit(X, y)
-print(gscv.best_score_)
-print(gscv.best_params_)
+#gscv = GridSearchCV(
+#    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
+#).fit(X, y)
+#print(gscv.best_score_)
+#print(gscv.best_params_)
 # -
 
 preprocessor = pp.PreprocessingSE()
