@@ -15,46 +15,23 @@
 # ---
 
 import pandas as pd
-import preprocesing as pp
-from sklearn import preprocessing, tree
+import preprocessing as pp
+import utils as utils
 import numpy as np
-from ipywidgets import Button, IntSlider, interactive
 from sklearn.model_selection import RandomizedSearchCV
-from sklearn.model_selection import train_test_split, StratifiedKFold, cross_validate
-from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score
 from sklearn.svm import SVC
-import seaborn as sns
-import matplotlib.pyplot as plt
-from sklearn.preprocessing import (
-    KBinsDiscretizer,
-    LabelEncoder,
-    OneHotEncoder
-)
 pd.set_option('mode.chained_assignment', None)
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 from sklearn.pipeline import Pipeline
 from sklearn.base import BaseEstimator, TransformerMixin
 
-# +
 import random
 seed = 100
 np.random.seed(seed)
 random.seed(seed)
 
-#When using tensorflor
-#import tensorflow as tf
-#tf.set_random_seed(seed)
-# -
-
-df_volvera = pd.read_csv('tp-2020-2c-train-cols1.csv')
-df_volvera.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
-df_datos = pd.read_csv('tp-2020-2c-train-cols2.csv')
-df_datos.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
-df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_usuario')
-
-X = df.drop(columns="volveria", axis=1, inplace=False)
-y = df["volveria"]
+X, y = utils.importar_datos()
 
 # ### Modelo 1
 
@@ -73,18 +50,16 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 # +
 params = {'model__C': np.arange(1, 150, 25), 'model__gamma': ['scale', 'auto'] + list(np.arange(1, 20))}
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
+cv = utils.kfold_for_cross_validation()
 rgscv = RandomizedSearchCV(
     pipeline, params, n_iter=50, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
 ).fit(X, y)
+print(rgscv.best_score_)
+print(rgscv.best_params_)
 # -
 
-rgscv.best_score_
-
-rgscv.best_params_
-
 preprocessor = pp.PreprocessingSE()
-model = SVC(kernel='rbf', random_state=pp.RANDOM_STATE, C=1, gamma='scale')
+model = SVC(kernel='rbf', random_state=pp.RANDOM_STATE, C=1, gamma='scale', probability=True)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
                      ("model", model)
@@ -92,14 +67,7 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 
 # #### Metricas
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
-scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
-scores_for_model = cross_validate(pipeline, X, y, cv=cv, scoring=scoring_metrics)
-print(f"Mean test roc auc is: {scores_for_model['test_roc_auc'].mean():.4f}")
-print(f"mean test accuracy is: {scores_for_model['test_accuracy'].mean():.4f}")
-print(f"mean test precision is: {scores_for_model['test_precision'].mean():.4f}")
-print(f"mean test recall is: {scores_for_model['test_recall'].mean():.4f}")
-print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
+utils.metricas_cross_validation(X, y, pipeline)
 
 # ### Modelo 2
 
@@ -109,36 +77,51 @@ print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 # - Preprocesamiento de variables categoricas con OneHotEncoding
 
 preprocessor = pp.PreprocessingSE()
-model = SVC(kernel='poly', random_state=pp.RANDOM_STATE)
+model = SVC(kernel='poly', random_state=pp.RANDOM_STATE, probability=True)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
                      ("model", model)
                      ])
 
 # +
-params = {'model__C': np.arange(1, 150, 25), 'model__degree': np.arange(1, 5), 
-          'model__gamma': np.arange(1, 150, 25), 'model__coef0': np.arange(1, 150, 25)}
+params = {'model__C': np.arange(1, 150, 10), 'model__degree': np.arange(1, 3)}
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
+cv = utils.kfold_for_cross_validation()
 rgscv = RandomizedSearchCV(
-    pipeline, params, n_iter=10, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
+    pipeline, params, n_iter=30, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
 ).fit(X, y)
+print(rgscv.best_score_)
+print(rgscv.best_params_)
 # -
 
-rgscv.best_score_
+model = SVC(kernel='poly', random_state=pp.RANDOM_STATE, C=1, degree=2, probability=True)
 
-rgscv.best_params_
+pipeline = Pipeline([("preprocessor", preprocessor), 
+                     ("model", model)
+                     ])
+
+# +
+params = {'model__gamma': ['scale', 'auto'], 'model__coef0': np.arange(1, 150, 25)}
+
+cv = utils.kfold_for_cross_validation()
+rgscv = GridSearchCV(
+    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
+).fit(X, y)
+print(rgscv.best_score_)
+print(rgscv.best_params_)
+# -
+
+preprocessor = pp.PreprocessingSE()
+model = SVC(kernel='poly', random_state=pp.RANDOM_STATE, C=1, degree=2, 
+            gamma='scale', coef0=101, probability=True)
+
+pipeline = Pipeline([("preprocessor", preprocessor), 
+                     ("model", model)
+                     ])
 
 # #### Metricas
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
-scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
-scores_for_model = cross_validate(pipeline, X, y, cv=cv, scoring=scoring_metrics)
-print(f"Mean test roc auc is: {scores_for_model['test_roc_auc'].mean():.4f}")
-print(f"mean test accuracy is: {scores_for_model['test_accuracy'].mean():.4f}")
-print(f"mean test precision is: {scores_for_model['test_precision'].mean():.4f}")
-print(f"mean test recall is: {scores_for_model['test_recall'].mean():.4f}")
-print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
+utils.metricas_cross_validation(X, y, pipeline)
 
 # ### Modelo 3 
 
@@ -148,7 +131,7 @@ print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 # - Preprocesamiento de variables categoricas con OneHotEncoding
 
 preprocessor = pp.PreprocessingSE()
-model = SVC(kernel='linear', random_state=pp.RANDOM_STATE)
+model = SVC(kernel='linear', random_state=pp.RANDOM_STATE, probability=True)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
                      ("model", model)
@@ -158,56 +141,41 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 from sklearn.model_selection import GridSearchCV
 params = {'model__C': np.arange(1, 250, 10)}
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
+cv = utils.kfold_for_cross_validation()
 gscv = GridSearchCV(
     pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
 ).fit(X, y)
-# -
-
-gscv.best_params_
-
-gscv.best_score_
+print(gscv.best_score_)
+print(gscv.best_params_)
 
 # +
 params = {'model__C': np.arange(30, 60)}
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
+cv = utils.kfold_for_cross_validation()
 gscv = GridSearchCV(
     pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
 ).fit(X, y)
+print(gscv.best_score_)
+print(gscv.best_params_)
 # -
 
-gscv.best_params_
-
-gscv.best_score_
-
 preprocessor = pp.PreprocessingSE()
-model = SVC(kernel='linear', random_state=pp.RANDOM_STATE, C=50)
-
-# +
+model = SVC(kernel='linear', random_state=pp.RANDOM_STATE, C=30, probability=True)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
                      ("model", model)
                      ])
-# -
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
-scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
-scores_for_model = cross_validate(pipeline, X, y, cv=cv, scoring=scoring_metrics)
-print(f"Mean test roc auc is: {scores_for_model['test_roc_auc'].mean():.4f}")
-print(f"mean test accuracy is: {scores_for_model['test_accuracy'].mean():.4f}")
-print(f"mean test precision is: {scores_for_model['test_precision'].mean():.4f}")
-print(f"mean test recall is: {scores_for_model['test_recall'].mean():.4f}")
-print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
+utils.metricas_cross_validation(X, y, pipeline)
 
 # ### Modelo 4
 
-# - Kernel Radian
+# - Kernel Radial
 # - Preprocesamiento con StandardScaler
 # - Preprocesamiento de variables categoricas con LabelEncoding
 
 preprocessor = pp.PreprocessingSE_2()
-model = SVC(kernel='rbf', random_state=pp.RANDOM_STATE, C=1, gamma='scale')
+model = SVC(kernel='rbf', random_state=pp.RANDOM_STATE, C=1, gamma='scale', probability=True)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
                      ("model", model)
@@ -215,21 +183,11 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 
 # #### Metricas
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
-scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
-scores_for_model = cross_validate(pipeline, X, y, cv=cv, scoring=scoring_metrics)
-print(f"Mean test roc auc is: {scores_for_model['test_roc_auc'].mean():.4f}")
-print(f"mean test accuracy is: {scores_for_model['test_accuracy'].mean():.4f}")
-print(f"mean test precision is: {scores_for_model['test_precision'].mean():.4f}")
-print(f"mean test recall is: {scores_for_model['test_recall'].mean():.4f}")
-print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
+utils.metricas_cross_validation(X, y, pipeline)
 
-# ### Metricas finales
+# ### Métricas finales
 
-# Se eligió el [Modelo 1](#Modelo-1) en base a los resultados obtenidos mediante `cross_validation`.
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, 
-                                                    random_state=pp.RANDOM_STATE, stratify=y)
+# Dado que el Modelo 1 (kernel radial) y el Modelo 2 (kernel polinomico) obtuvieron resultados similares mediante `cross_validation`, se optó por elegir el [Modelo 1](#Modelo-1).
 
 preprocessor = pp.PreprocessingSE()
 model = SVC(kernel='rbf', random_state=pp.RANDOM_STATE, C=1, gamma='scale', probability=True)
@@ -238,29 +196,8 @@ pipeline = Pipeline([("preprocessor", preprocessor),
                      ("model", model)
                      ])
 
-pipeline.fit(X_train, y_train)
-
-y_pred = pipeline.predict(X_test)
-y_pred_proba = pipeline.predict_proba(X_test)[:, 1]
-
-scores = [accuracy_score, precision_score, recall_score, f1_score]
-columnas = ['AUC_ROC', 'Accuracy', 'Precision', 'Recall', 'F1 Score']
-results = [roc_auc_score(y_test, y_pred_proba)]
-results += [s(y_test, y_pred) for s in scores]
-display(pd.DataFrame([results], columns=columnas).style.hide_index())
-
-scores = [accuracy_score, precision_score, recall_score, f1_score]
-columnas = ['AUC_ROC', 'Accuracy', 'Precision', 'Recall', 'F1 Score']
-results = [roc_auc_score(y_test, y_pred_proba)]
-results += [s(y_test, y_pred) for s in scores]
-display(pd.DataFrame([results], columns=columnas).style.hide_index())
+pipeline = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipeline)
 
 # ### Predicción HoldOut
 
-df_predecir = pd.read_csv('https://drive.google.com/uc?export=download&id=1I980-_K9iOucJO26SG5_M8RELOQ5VB6A')
-
-df_predecir['volveria'] = pipeline.predict(df_predecir)
-df_predecir = df_predecir[['id_usuario', 'volveria']]
-
-with open('Predicciones/5-SVM.csv', 'w') as f:
-    df_predecir.to_csv(f, sep=',', index=False)
+utils.predecir_holdout_y_generar_csv(pipeline, 'Predicciones/5-SVM.csv')
