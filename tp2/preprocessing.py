@@ -21,10 +21,15 @@ TEST_SIZE = 0.2
 
 class PreprocessingLE(BaseEstimator, TransformerMixin):
     """
-    -Elimina columnas sin infromación valiosa (fila, id_usuario, id_ticket).
-    -Encodea variables categóricas mediante LabelEncoding (genero, nombre_sala, tipo_de_sala)
-    -Completa los missing values de la columna edad con la media
+    -Agrega una columna fila_isna (que indica si el valor de la fila es o no NaN).
+    -Elimina columnas sin información valiosa1.
+    -Agrega una columna nombre_sede_isna (que indica si el valor de la fila es o no NaN)
+    y rellena los NaN con la moda.
+    -Encodea variables categóricas mediante LabelEncoding2.
+    -Agrega una columna edad_isna (que indica si el valor de la fila es o no NaN).
+    -Completa los missing values de la columna edad con la media.
     -Convierte en bins los valores de las columnas edad y precio_ticket.
+
     """
     def __init__(self):
         super().__init__()
@@ -88,10 +93,11 @@ class PreprocessingLE(BaseEstimator, TransformerMixin):
 
 class PreprocessingOHE(BaseEstimator, TransformerMixin):
     """
-    -Elimina columnas sin infromación valiosa (fila, id_usuario, id_ticket).
-    -Encodea variables categóricas mediante OneHotEncoding (genero, nombre_sala, tipo_de_sala)
+    -Agrega una columna fila_isna que indica si el valor de la fila es o no NaN.
+    -Elimina columnas sin información valiosa1.
+    -Encodea variables categóricas mediante OneHotEncoding2.
     -Completa los missing values de la columna edad con la media.
-    -Convierte en bins los valores de la columna precio_ticket.
+    -Convierte en bins los valores de las columnas edad y precio_ticket.
     """
     def __init__(self):
         super().__init__()
@@ -131,10 +137,11 @@ class PreprocessingOHE(BaseEstimator, TransformerMixin):
     
 class PreprocessingSE(BaseEstimator, TransformerMixin):
     """
-    -Elimina columnas sin infromación valiosa (fila, id_usuario, id_ticket).
-    -Encodea variables categóricas mediante OneHotEncoding (genero, nombre_sala, tipo_de_sala)
+    -Agrega una columna fila_isna que indica si el valor de la fila es o no NaN.
+    -Elimina columnas sin información valiosa1.
+    -Encodea variables categóricas mediante OneHotEncoding2.
     -Completa los missing values de la columna edad con la media.
-    -Escala los valores numéricos (edad, precio_ticket, parientes y amigos) a media 0 y desvio estandar 1 con StandardScaler.
+    -Escala los valores numéricos3 a media 0 y desvio estandar 1 con StandardScaler.
     """
     def __init__(self):
         super().__init__()
@@ -323,10 +330,8 @@ class PreprocessingXGBoost2(BaseEstimator, TransformerMixin):
 
 class PreprocessingCategoricalNB1(BaseEstimator, TransformerMixin):
     """
-        -Elimina columnas sin información valiosa (fila, id_usuario, id_ticket) y con valores 
-            continuos o discretos(parientes, amigos, edad y precio_ticket).
-        -Encodea variables categóricas mediante LabelEncoding (genero, nombre_sala, tipo_de_sala)
-        -Agrega columnas edad_isna, fila_isna
+    -Elimina columnas sin información valiosa1 y con valores continuos o discretos4.
+    -Encodea variables categóricas mediante LabelEncoding2.
     """
     def __init__(self):
         super().__init__()
@@ -344,8 +349,6 @@ class PreprocessingCategoricalNB1(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         X = X.copy()
-        X["edad_isna"] = X["edad"].isna().astype(int)
-        X["fila_isna"] = X["fila"].isna().astype(int)
         
         X['tipo_de_sala_encoded'] = self.le_tipo_sala.transform(X['tipo_de_sala'].astype(str))
         X = X.drop(columns=["tipo_de_sala"], axis=1, inplace=False)
@@ -353,7 +356,6 @@ class PreprocessingCategoricalNB1(BaseEstimator, TransformerMixin):
         X['genero_encoded'] = self.le_genero.transform(X['genero'].astype(str))
         X = X.drop(columns=["genero"], axis=1, inplace=False)
         
-        X["nombre_sede_isna"] = X["nombre_sede"].isna().astype(int)
         X["nombre_sede"] = X["nombre_sede"].fillna(self._moda_nombre_sede)
         X['nombre_sede_encoded'] = self.le_nombre_sede.transform(X['nombre_sede'].astype(str))
         X = X.drop(columns=["nombre_sede"], axis=1, inplace=False)
@@ -450,9 +452,9 @@ class PreprocessingCategoricalNB2(BaseEstimator, TransformerMixin):
 
 class PreprocessingGaussianNB1(BaseEstimator, TransformerMixin):
     """
-        - Elimina columnas sin infromación valiosa (fila, id_usuario, id_ticket) y con valores 
-            categoricos (genero, fila, tipo_de_sala, nombre_sede).
-        - Se agrega la columna acompaniantes y se eliminan parientes y amigos.
+    -Elimina columnas sin información valiosa1 y con valores categóricos2.
+    -Se agrega la columna acompaniantes y se eliminan las columnas parientes y amigos.
+    -Completa los missing values de la columna edad con la media.
     """
     def __init__(self):
         super().__init__()
@@ -517,7 +519,7 @@ class LabelEncoderCategoricas(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
-        X = X.copy()nplace=False)
+        X = X.copy()
         
         X["nombre_sede_isna"] = X["nombre_sede"].isna().astype(int)
         X['nombre_sede'] = X['nombre_sede'].fillna(self.moda_nombre_sede)

@@ -146,7 +146,7 @@ max_score_value = 0
 optimal_var_smothing = 0
 for var_smothing in options:
     stacking = stacking_gaussian(var_smothing)
-    cv = kfold_for_cross_validation()
+    cv = utils.kfold_for_cross_validation()
     scoring_metrics = ["roc_auc"]
     scores_for_model = cross_validate(stacking, X, y, cv=cv, scoring=scoring_metrics)
     roc_auc_score_value = scores_for_model['test_roc_auc'].mean()

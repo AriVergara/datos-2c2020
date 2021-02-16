@@ -36,6 +36,7 @@ X, y = utils.importar_datos()
 # ### Modelo 1
 
 # - Se utilizan únicamente las variables categóricas genero, tipo_sala y nombre_sede para realizar la clasificación
+# - Se probó agregando las columnas `edad_isna` y `fila_isna` pero el modelo no mejoró sus resultados.
 
 pipeline_1 = Pipeline([("preprocessor", pp.PreprocessingCategoricalNB1()), 
                      ("model", CategoricalNB())
@@ -92,18 +93,18 @@ params = {'model__alpha': np.arange(1, 10, 1)}
 
 cv = utils.kfold_for_cross_validation()
 #Descomentar para ejecutar GridSearchCV
-#gscv_categorical = GridSearchCV(pipeline_categorical, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True).fit(X, y)
-#print(gscv_categorical.best_score_)
-#print(gscv_categorical.best_params_)
+gscv_categorical = GridSearchCV(pipeline_categorical, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True).fit(X, y)
+print(gscv_categorical.best_score_)
+print(gscv_categorical.best_params_)
 
 # +
 params = {'model__var_smoothing': [1e-9, 1e-8, 1e-7, 1e-6, 1e-3, 5e-3, 1e-2, 3e-2, 5e-2, 0.1, 0.3]}
 
 cv = utils.kfold_for_cross_validation()
 #Descomentar para ejecutar GridSearchCV
-#gscv_gaussian = GridSearchCV(pipeline_gaussian, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True).fit(X, y)
-#print(gscv_gaussian.best_score_)
-#print(gscv_gaussian.best_params_)
+gscv_gaussian = GridSearchCV(pipeline_gaussian, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True).fit(X, y)
+print(gscv_gaussian.best_score_)
+print(gscv_gaussian.best_params_)
 # -
 
 pipeline_gaussian = Pipeline([("preprocessor", pp.PreprocessingGaussianNB1()), 
