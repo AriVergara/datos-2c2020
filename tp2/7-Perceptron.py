@@ -24,7 +24,6 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=UserWarning)
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import Perceptron
-from sklearn.base import BaseEstimator, TransformerMixin
 
 import random
 seed = 100

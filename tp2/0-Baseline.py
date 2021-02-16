@@ -14,30 +14,18 @@
 # ---
 
 import pandas as pd
+import utils as utils
 import numpy as np
-import preprocesing as pp
+import preprocessing as pp
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score
 
-# +
 import random
 seed = 100
 np.random.seed(seed)
 random.seed(seed)
 
-#When using tensorflor
-#import tensorflow as tf
-#tf.set_random_seed(seed)
-# -
-
-df_volvera = pd.read_csv('tp-2020-2c-train-cols1.csv')
-df_volvera.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
-df_datos = pd.read_csv('tp-2020-2c-train-cols2.csv')
-df_datos.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
-df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_usuario')
-
-X = df.drop(columns="volveria", axis=1, inplace=False)
-y = df["volveria"]
+X, y = utils.importar_datos()
 
 X[~(X["genero"] == "hombre") & ~(X["tipo_de_sala"] == "4d")].tipo_de_sala.value_counts()
 

@@ -19,7 +19,6 @@ import preprocessing as pp
 import utils as utils
 from sklearn import tree
 import numpy as np
-import seaborn as sns
 pd.set_option('mode.chained_assignment', None)
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)

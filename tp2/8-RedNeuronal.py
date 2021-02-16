@@ -30,7 +30,6 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=UserWarning)
 from sklearn.pipeline import Pipeline
-from sklearn.base import BaseEstimator, TransformerMixin
 from keras.wrappers.scikit_learn import KerasClassifier
 
 import random
@@ -39,6 +38,8 @@ np.random.seed(seed)
 random.seed(seed)
 import tensorflow
 tensorflow.random.set_seed(seed)
+import os
+os.environ['PYTHONHASHSEED']=str(seed)
 
 # + jupyter={"source_hidden": true}
 X, y = utils.importar_datos()
@@ -465,6 +466,10 @@ pipeline = Pipeline([("preprocessor", pp.PreprocessingSE()),
 
 pipeline = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipeline)
 
+# Aclaración: Se setearon todos los seeds que se encontraron en la documentación de Keras para lograr resultados reproducibles, sin embargo no se pudo lograr que las metricas no varien en las distintas ejecuciones.
+
 # ### Predicción HoldOut
 
 utils.predecir_holdout_y_generar_csv(pipeline, 'Predicciones/8-RedNeuronal.csv')
+
+

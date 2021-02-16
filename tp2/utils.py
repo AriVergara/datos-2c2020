@@ -137,9 +137,9 @@ def predecir_holdout_y_generar_csv(pipeline, path_archivo):
 
 
 def importar_datos():
-    df_volvera = pd.read_csv('tp-2020-2c-train-cols1.csv')
+    df_volvera = pd.read_csv('https://drive.google.com/uc?export=download&id=1km-AEIMnWVGqMtK-W28n59hqS5Kufhd0')
     df_volvera.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
-    df_datos = pd.read_csv('tp-2020-2c-train-cols2.csv')
+    df_datos = pd.read_csv('https://drive.google.com/uc?export=download&id=1i-KJ2lSvM7OQH0Yd59bX01VoZcq8Sglq')
     df_datos.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
     df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_usuario')
     X = df.drop(columns="volveria", axis=1, inplace=False)
