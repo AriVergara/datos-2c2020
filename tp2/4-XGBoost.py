@@ -209,7 +209,7 @@ print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 
 # ### Modelo 3
 
-# - Con el Modelo 1, se corre Grid Search para buscar los mejores hiperparametros
+# - Con el Modelo 2, se corre Grid Search para buscar los mejores hiperparametros
 
 pipeline = Pipeline([
     ("preprocessor", pp.PreprocessingLE()),

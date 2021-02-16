@@ -119,7 +119,7 @@ params = {'model__max_depth': [10, 20, 50, None], 'model__min_samples_leaf': [1,
           "model__criterion": ["gini", "entropy"], "model__max_features": ["auto", "log2", 7, 2]}
 cv = StratifiedKFold(n_splits=5, random_state=pp.RANDOM_STATE, shuffle=True)
 gscv = GridSearchCV(
-    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
+    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True, refit=True
 ).fit(X, y)
 
 gscv.best_params_
@@ -131,7 +131,7 @@ params = {'model__max_depth': np.arange(5,15), 'model__min_samples_leaf': np.ara
          "model__n_estimators": [75, 100, 125], "model__min_samples_split": np.arange(12, 25)}
 cv = StratifiedKFold(n_splits=5, random_state=pp.RANDOM_STATE, shuffle=True)
 gscv = GridSearchCV(
-    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True
+    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True, refit=True
 ).fit(X, y)
 
 gscv.best_params_
