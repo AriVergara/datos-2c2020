@@ -377,7 +377,7 @@ class PreprocessingCategoricalNB2(BaseEstimator, TransformerMixin):
         -Elimina columnas sin infromación valiosa (fila, id_usuario, id_ticket) y con valores 
             continuos o discretos(parientes, amigos, edad y precio_ticket).
         -Encodea variables categóricas mediante LabelEncoding (genero, nombre_sala, tipo_de_sala)
-        -Agrega columnas va_con_amigos, va_con_parientes
+        -Transforma en bins la edad y el precio_ticket.
     """
     def __init__(self):
         super().__init__()
