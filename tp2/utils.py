@@ -99,5 +99,39 @@ def metricas_cross_validation(X, y, clf):
     #print(f"mean test f1_score is: {np.mean(test_f1_scores):.4f}, standard deviation is: {np.std(test_f1_scores):.4f}, oof is {f1_score(y, oof_predictions)}")
 
 
-def train_test_split_para_prediccion_final(X, y):
-    return train_test_split(X, y, test_size=0.15, random_state=pp.RANDOM_STATE, stratify=y)
+def entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipeline, use_decision_function=False):
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, 
+                                                    random_state=pp.RANDOM_STATE, stratify=y)
+    
+    pipeline.fit(X_train, y_train)
+    y_pred = pipeline.predict(X_test)
+    if use_decision_function:
+        y_pred_proba = pipeline.decision_function(X_test)
+    else:
+        y_pred_proba = pipeline.predict_proba(X_test)[:, 1]
+        
+    scores = [accuracy_score, precision_score, recall_score, f1_score]
+    columnas = ['AUC_ROC', 'Accuracy', 'Precision', 'Recall', 'F1 Score']
+    results = [roc_auc_score(y_test, y_pred_proba)]
+    results += [s(y_test, y_pred) for s in scores]
+    display(pd.DataFrame([results], columns=columnas).style.hide_index())
+    return pipeline
+
+
+def predecir_holdout_y_generar_csv(pipeline, path_archivo):
+    df_predecir = pd.read_csv('https://drive.google.com/uc?export=download&id=1I980-_K9iOucJO26SG5_M8RELOQ5VB6A')
+    df_predecir['volveria'] = pipeline.predict(df_predecir)
+    df_predecir = df_predecir[['id_usuario', 'volveria']]
+    with open(path_archivo, 'w') as f:
+        df_predecir.to_csv(f, sep=',', index=False)
+
+
+def importar_datos():
+    df_volvera = pd.read_csv('tp-2020-2c-train-cols1.csv')
+    df_volvera.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
+    df_datos = pd.read_csv('tp-2020-2c-train-cols2.csv')
+    df_datos.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
+    df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_usuario')
+    X = df.drop(columns="volveria", axis=1, inplace=False)
+    y = df["volveria"]
+    return X, y
