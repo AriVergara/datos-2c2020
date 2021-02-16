@@ -249,6 +249,7 @@ class PreprocessingSE(BaseEstimator, TransformerMixin):
         X = X.drop(columns=["id_ticket"], axis=1, inplace=False)
 
         X["edad_isna"] = X["edad"].isna().astype(int)
+        X["edad"] = X["edad"].fillna(self.mean_edad)
         
         X[["edad", "precio_ticket", "parientes", "amigos"]] = self.scaler.transform(X[["edad", "precio_ticket", "parientes", "amigos"]])
         
