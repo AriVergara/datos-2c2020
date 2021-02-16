@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
@@ -17,7 +18,7 @@ import pandas as pd
 import preprocesing as pp
 import numpy as np
 from sklearn.model_selection import train_test_split, StratifiedKFold, cross_validate
-from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score
+from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score, plot_confusion_matrix
 import preprocesing as pp
 
 
@@ -115,6 +116,8 @@ def entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipeline, use_decisi
     results = [roc_auc_score(y_test, y_pred_proba)]
     results += [s(y_test, y_pred) for s in scores]
     display(pd.DataFrame([results], columns=columnas).style.hide_index())
+    print("Matriz de confusión:")
+    plot_confusion_matrix(pipeline, X_test, y_test, normalize="true")
     return pipeline
 
 
