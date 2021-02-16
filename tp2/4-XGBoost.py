@@ -15,14 +15,9 @@
 # ---
 
 import pandas as pd
-import preprocesing as pp
+import preprocessing as pp
+import utils as utils
 import numpy as np
-from sklearn.model_selection import train_test_split, StratifiedKFold, cross_validate
-from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score
-from sklearn.preprocessing import (
-    LabelEncoder,
-    OneHotEncoder
-)
 from xgboost.sklearn import XGBClassifier
 pd.set_option('mode.chained_assignment', None)
 import warnings
@@ -36,14 +31,7 @@ seed = 100
 np.random.seed(seed)
 random.seed(seed)
 
-df_volvera = pd.read_csv('tp-2020-2c-train-cols1.csv')
-df_volvera.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
-df_datos = pd.read_csv('tp-2020-2c-train-cols2.csv')
-df_datos.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
-df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_usuario')
-
-X = df.drop(columns="volveria", axis=1, inplace=False)
-y = df["volveria"]
+X, y = utils.importar_datos()
 
 # ### Modelo 1
 
@@ -59,14 +47,7 @@ pipeline = Pipeline([
 
 # #### Metricas
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
-scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
-scores_for_model = cross_validate(pipeline, X, y, cv=cv, scoring=scoring_metrics)
-print(f"Mean test roc auc is: {scores_for_model['test_roc_auc'].mean():.4f}")
-print(f"mean test accuracy is: {scores_for_model['test_accuracy'].mean():.4f}")
-print(f"mean test precision is: {scores_for_model['test_precision'].mean():.4f}")
-print(f"mean test recall is: {scores_for_model['test_recall'].mean():.4f}")
-print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
+utils.metricas_cross_validation(X, y, pipeline)
 
 # ### Modelo 2
 
@@ -81,14 +62,7 @@ pipeline = Pipeline([
 
 # #### Metricas
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
-scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
-scores_for_model = cross_validate(pipeline, X, y, cv=cv, scoring=scoring_metrics)
-print(f"Mean test roc auc is: {scores_for_model['test_roc_auc'].mean():.4f}")
-print(f"mean test accuracy is: {scores_for_model['test_accuracy'].mean():.4f}")
-print(f"mean test precision is: {scores_for_model['test_precision'].mean():.4f}")
-print(f"mean test recall is: {scores_for_model['test_recall'].mean():.4f}")
-print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
+utils.metricas_cross_validation(X, y, pipeline)
 
 # ### Modelo 3
 
@@ -101,14 +75,7 @@ pipeline = Pipeline([
 
 # #### Metricas
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
-scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
-scores_for_model = cross_validate(pipeline, X, y, cv=cv, scoring=scoring_metrics)
-print(f"Mean test roc auc is: {scores_for_model['test_roc_auc'].mean():.4f}")
-print(f"mean test accuracy is: {scores_for_model['test_accuracy'].mean():.4f}")
-print(f"mean test precision is: {scores_for_model['test_precision'].mean():.4f}")
-print(f"mean test recall is: {scores_for_model['test_recall'].mean():.4f}")
-print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
+utils.metricas_cross_validation(X, y, pipeline)
 
 # ### Modelo 4
 
@@ -125,14 +92,7 @@ pipeline = Pipeline([
                             eval_metric="logloss", min_child_weight=6, max_depth=6, reg_alpha=0.05))
 ])
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
-scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
-scores_for_model = cross_validate(pipeline, X, y, cv=cv, scoring=scoring_metrics)
-print(f"Mean test roc auc is: {scores_for_model['test_roc_auc'].mean():.4f}")
-print(f"mean test accuracy is: {scores_for_model['test_accuracy'].mean():.4f}")
-print(f"mean test precision is: {scores_for_model['test_precision'].mean():.4f}")
-print(f"mean test recall is: {scores_for_model['test_recall'].mean():.4f}")
-print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
+utils.metricas_cross_validation(X, y, pipeline)
 
 # +
 params = {
@@ -144,18 +104,13 @@ params = {
     'model__eval_metric': ['logloss', 'error']
 }
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
-gscv = GridSearchCV(
-    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=8, return_train_score=True
-).fit(X, y)
+cv = utils.kfold_for_cross_validation()
+#gscv = GridSearchCV(pipeline, params, scoring='roc_auc', n_jobs=-1, cv=8, return_train_score=True).fit(X, y)
 # -
 
 # ### Métricas finales
 
 # Se eligió el [Modelo 4](#Modelo-4) en base a los resultados obtenidos mediante `cross_validation`.
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, 
-                                                    random_state=pp.RANDOM_STATE, stratify=y)
 
 pipeline = Pipeline([
     ("preprocessor", pp.PreprocessingLE()),
@@ -164,23 +119,8 @@ pipeline = Pipeline([
                             eval_metric="logloss", min_child_weight=6, max_depth=6, reg_alpha=0.05))
 ])
 
-pipeline.fit(X_train, y_train)
-
-y_pred = pipeline.predict(X_test)
-y_pred_proba = pipeline.predict_proba(X_test)[:, 1]
-
-scores = [accuracy_score, precision_score, recall_score, f1_score]
-columnas = ['AUC_ROC', 'Accuracy', 'Precision', 'Recall', 'F1 Score']
-results = [roc_auc_score(y_test, y_pred_proba)]
-results += [s(y_test, y_pred) for s in scores]
-display(pd.DataFrame([results], columns=columnas).style.hide_index())
+pipeline = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipeline)
 
 # ### Predicción HoldOut
 
-df_predecir = pd.read_csv('https://drive.google.com/uc?export=download&id=1I980-_K9iOucJO26SG5_M8RELOQ5VB6A')
-
-df_predecir['volveria'] = pipeline.predict(df_predecir)
-df_predecir = df_predecir[['id_usuario', 'volveria']]
-
-with open('Predicciones/4-XGBoost.csv', 'w') as f:
-    df_predecir.to_csv(f, sep=',', index=False)
+utils.predecir_holdout_y_generar_csv(pipeline, 'Predicciones/4-XGBoost.csv')

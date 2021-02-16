@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.9.1
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -15,8 +15,10 @@
 # ---
 
 import pandas as pd
-import preprocesing as pp
+import preprocessing as pp
+import utils as utils
 import keras
+from keras.regularizers import l2
 from sklearn import preprocessing, tree
 import numpy as np
 from ipywidgets import Button, IntSlider, interactive
@@ -138,36 +140,52 @@ gscv.best_params_
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0, stratify=y)
 
+
 # +
 #y_train = keras.utils.to_categorical(y_train, 2)
 #y_test = keras.utils.to_categorical(y_test, 2)
 # -
+
+# ### Modelo 1
 
 # - 3 Capas (8, 4 y 4 neuronas)
 # - Opt: Adamax
 # - epoch: 1000
 # - activacion: relu
 
-# + jupyter={"source_hidden": true}
-model = Sequential()
-model.add(Dense(8, input_dim=14, activation='relu'))
-model.add(Dense(4, activation='relu'))
-model.add(Dense(4, activation='relu'))
-model.add(Dense(1, activation="sigmoid"))
-model.compile(loss='binary_crossentropy', optimizer='Adamax', metrics=['accuracy'])
-history = model.fit(
-    preprocessor.fit_transform(X_train), y_train, epochs=1000, 
-    validation_data=(preprocessor.transform(X_test), y_test), verbose=0
-)
+def red_1():
+    model = Sequential()
+    model.add(Dense(8, input_dim=14, activation='relu'))
+    model.add(Dense(4, activation='relu'))
+    model.add(Dense(4, activation='relu'))
+    model.add(Dense(1, activation="sigmoid"))
+    model.compile(loss='binary_crossentropy', optimizer='Adamax', metrics=['accuracy'])
+    return model
 
-# + jupyter={"source_hidden": true}
+
+model = red_1()
+history = model.fit(
+        preprocessor.fit_transform(X_train), y_train, epochs=1000, 
+        validation_data=(preprocessor.transform(X_test), y_test), verbose=0
+    )
+
 fig = plt.figure(figsize=(12, 6), dpi=100)
 plt.ylabel("Accuracy")
 plt.xlabel("epoc")
 plt.plot(history.history["accuracy"], label="training")
 plt.plot(history.history["val_accuracy"], label="validation")
 plt.legend()
-# -
+
+# #### Métricas
+
+pipeline = Pipeline([("preprocessor", pp.PreprocessingSE()), 
+                     ("model", KerasClassifier(red_1, epochs=600, verbose=0))
+                     ])
+
+utils.metricas_cross_validation(X, y, pipeline)
+
+
+# ### Modelo 2
 
 # - 2 Capas (8, 4 neuronas)
 # - Opt: Adam
@@ -175,81 +193,116 @@ plt.legend()
 # - activacion: tanh
 # - regularizacion L2
 
-# + jupyter={"source_hidden": true}
-from keras.regularizers import l2
-model = Sequential()
-model.add(Dense(8, input_dim=14, activation='tanh', kernel_regularizer=l2(0.01)))
-model.add(Dense(4, activation='tanh', kernel_regularizer=l2(0.01)))
-model.add(Dense(1, activation="sigmoid"))
-model.compile(loss='binary_crossentropy', optimizer='Adam', metrics=['accuracy'])
+def red_2():
+    model = Sequential()
+    model.add(Dense(8, input_dim=14, activation='tanh', kernel_regularizer=l2(0.01)))
+    model.add(Dense(4, activation='tanh', kernel_regularizer=l2(0.01)))
+    model.add(Dense(1, activation="sigmoid"))
+    model.compile(loss='binary_crossentropy', optimizer='Adam', metrics=['accuracy'])
+    return model
+
+
+model = red_2()
 history = model.fit(
     preprocessor.fit_transform(X_train), y_train, epochs=600, 
     validation_data=(preprocessor.transform(X_test), y_test), verbose=0
 )
 
-# + jupyter={"source_hidden": true}
 fig = plt.figure(figsize=(12, 6), dpi=100)
 plt.ylabel("Accuracy")
 plt.xlabel("epoc")
 plt.plot(history.history["accuracy"], label="training")
 plt.plot(history.history["val_accuracy"], label="validation")
 plt.legend()
-# -
+
+# #### Métricas
+
+pipeline = Pipeline([("preprocessor", pp.PreprocessingSE()), 
+                     ("model", KerasClassifier(red_2, epochs=600, verbose=0))
+                     ])
+
+utils.metricas_cross_validation(X, y, pipeline)
+
+
+# ### Modelo 3
 
 # - 2 Capas (8, 4 neuronas)
 # - Opt: Adam
 # - epoch: 600
 # - activacion: tanh
 
-# + jupyter={"source_hidden": true}
-from keras.regularizers import l2
-model = Sequential()
-model.add(Dense(8, input_dim=14, activation='tanh'))
-model.add(Dense(4, activation='tanh'))
-model.add(Dense(1, activation="sigmoid"))
-model.compile(loss='binary_crossentropy', optimizer='Adam', metrics=['accuracy'])
+def red_3():
+    model = Sequential()
+    model.add(Dense(8, input_dim=14, activation='tanh'))
+    model.add(Dense(4, activation='tanh'))
+    model.add(Dense(1, activation="sigmoid"))
+    model.compile(loss='binary_crossentropy', optimizer='Adam', metrics=['accuracy'])
+    return model
+
+
+model = red_3()
 history = model.fit(
     preprocessor.fit_transform(X_train), y_train, epochs=600, 
     validation_data=(preprocessor.transform(X_test), y_test), verbose=0
 )
 
-# + jupyter={"source_hidden": true}
 fig = plt.figure(figsize=(12, 6), dpi=100)
 plt.ylabel("Accuracy")
 plt.xlabel("epoc")
 plt.plot(history.history["accuracy"], label="training")
 plt.plot(history.history["val_accuracy"], label="validation")
 plt.legend()
-# -
+
+# #### Métricas
+
+pipeline = Pipeline([("preprocessor", pp.PreprocessingSE()), 
+                     ("model", KerasClassifier(red_3, epochs=600, verbose=0))
+                     ])
+
+utils.metricas_cross_validation(X, y, pipeline)
+
+
+# ### Modelo 4
 
 # - 3 Capas (8, 4, 4 neuronas)
 # - Opt: Adam
 # - epoch: 600
 # - activacion: relu
 
-# + jupyter={"source_hidden": true}
-from keras.regularizers import l2
-model = Sequential()
-model.add(Dense(8, input_dim=14, activation='relu'))
-model.add(Dense(4, activation='relu'))
-model.add(Dense(4, activation='relu'))
-model.add(Dense(1, activation="sigmoid"))
-model.compile(loss='binary_crossentropy', optimizer='Adam', metrics=['accuracy'])
+def red_4():
+    model = Sequential()
+    model.add(Dense(8, input_dim=14, activation='relu'))
+    model.add(Dense(4, activation='relu'))
+    model.add(Dense(4, activation='relu'))
+    model.add(Dense(1, activation="sigmoid"))
+    model.compile(loss='binary_crossentropy', optimizer='Adam', metrics=['accuracy'])
+    return model
+
+
+model = red_4()
 history = model.fit(
     preprocessor.fit_transform(X_train), y_train, epochs=600, 
     validation_data=(preprocessor.transform(X_test), y_test), verbose=0
 )
 
-# + jupyter={"source_hidden": true}
 fig = plt.figure(figsize=(12, 6), dpi=100)
 plt.ylabel("Accuracy")
 plt.xlabel("epoc")
 plt.plot(history.history["accuracy"], label="training")
 plt.plot(history.history["val_accuracy"], label="validation")
 plt.legend()
-# -
+# #### Métricas
+
+pipeline = Pipeline([("preprocessor", pp.PreprocessingSE()), 
+                     ("model", KerasClassifier(red_4, epochs=600, verbose=0))
+                     ])
+
+utils.metricas_cross_validation(X, y, pipeline)
 
 
+
+
+# ### Modelo 5
 
 # - 3 Capas (8, 4, 4 neuronas)
 # - Opt: Adam
@@ -257,27 +310,38 @@ plt.legend()
 # - activacion: relu
 # - regularizacion L2
 
-# + jupyter={"source_hidden": true}
-from keras.regularizers import l2
-model = Sequential()
-model.add(Dense(8, input_dim=14, activation='relu', kernel_regularizer=l2(0.01)))
-model.add(Dense(4, activation='relu', kernel_regularizer=l2(0.01)))
-model.add(Dense(4, activation='relu', kernel_regularizer=l2(0.01)))
-model.add(Dense(1, activation="sigmoid"))
-model.compile(loss='binary_crossentropy', optimizer='Adam', metrics=['accuracy'])
+def red_5():
+    model = Sequential()
+    model.add(Dense(8, input_dim=14, activation='relu', kernel_regularizer=l2(0.01)))
+    model.add(Dense(4, activation='relu', kernel_regularizer=l2(0.01)))
+    model.add(Dense(4, activation='relu', kernel_regularizer=l2(0.01)))
+    model.add(Dense(1, activation="sigmoid"))
+    model.compile(loss='binary_crossentropy', optimizer='Adam', metrics=['accuracy'])
+    return model
+
+
+model = red_5()
 history = model.fit(
     preprocessor.fit_transform(X_train), y_train, epochs=600, 
     validation_data=(preprocessor.transform(X_test), y_test), verbose=0
 )
 
-# + jupyter={"source_hidden": true}
 fig = plt.figure(figsize=(12, 6), dpi=100)
 plt.ylabel("Accuracy")
 plt.xlabel("epoc")
 plt.plot(history.history["accuracy"], label="training")
 plt.plot(history.history["val_accuracy"], label="validation")
 plt.legend()
-# -
+
+# #### Métricas
+
+pipeline = Pipeline([("preprocessor", pp.PreprocessingSE()), 
+                     ("model", KerasClassifier(red_5, epochs=600, verbose=0))
+                     ])
+
+utils.metricas_cross_validation(X, y, pipeline)
+
+# ### Modelo 6
 
 # - 3 Capas (8, 4, 4 neuronas)
 # - EarlyStopping patience 50
@@ -286,31 +350,37 @@ plt.legend()
 # - activacion: relu
 # - regularizacion L2
 
-# + jupyter={"source_hidden": true}
-from keras.regularizers import l2
 from keras.callbacks import EarlyStopping, ModelCheckpoint
-custom_early_stopping = EarlyStopping(monitor='val_accuracy', patience=50, mode='max')
-model = Sequential()
-model.add(Dense(8, input_dim=14, activation='relu', kernel_regularizer=l2(0.01)))
-model.add(Dense(4, activation='relu', kernel_regularizer=l2(0.01)))
-model.add(Dense(4, activation='relu', kernel_regularizer=l2(0.01)))
-model.add(Dense(1, activation="sigmoid"))
-model.compile(loss='binary_crossentropy', optimizer='Adam', metrics=['accuracy'])
+def red_6():
+    custom_early_stopping = EarlyStopping(monitor='val_accuracy', patience=50, mode='max')
+    model = Sequential()
+    model.add(Dense(8, input_dim=14, activation='relu', kernel_regularizer=l2(0.01)))
+    model.add(Dense(4, activation='relu', kernel_regularizer=l2(0.01)))
+    model.add(Dense(4, activation='relu', kernel_regularizer=l2(0.01)))
+    model.add(Dense(1, activation="sigmoid"))
+    model.compile(loss='binary_crossentropy', optimizer='Adam', metrics=['accuracy'])
+    return model
+
+
+model = red_6()
 history = model.fit(
     preprocessor.fit_transform(X_train), y_train, epochs=600, 
-    validation_data=(preprocessor.transform(X_test), y_test), verbose=0, callbacks=[custom_early_stopping]
+    validation_data=(preprocessor.transform(X_test), y_test), verbose=0
 )
 
-# + jupyter={"source_hidden": true}
 fig = plt.figure(figsize=(12, 6), dpi=100)
 plt.ylabel("Accuracy")
 plt.xlabel("epoc")
 plt.plot(history.history["accuracy"], label="training")
 plt.plot(history.history["val_accuracy"], label="validation")
 plt.legend()
-# -
+# #### Métricas
 
+pipeline = Pipeline([("preprocessor", pp.PreprocessingSE()), 
+                     ("model", KerasClassifier(red_6, epochs=600, verbose=0))
+                     ])
 
+utils.metricas_cross_validation(X, y, pipeline)
 
 # - 2 Capas (32, 16 neuronas)
 # - Opt: Adam

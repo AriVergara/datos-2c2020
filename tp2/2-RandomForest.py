@@ -15,19 +15,9 @@
 # ---
 
 import pandas as pd
-import preprocesing as pp
-from sklearn import preprocessing
+import preprocessing as pp
 import numpy as np
-from sklearn.model_selection import train_test_split, StratifiedKFold, cross_validate
-from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score
 from sklearn.ensemble import RandomForestClassifier
-import seaborn as sns
-import matplotlib.pyplot as plt
-from sklearn.preprocessing import (
-    KBinsDiscretizer,
-    LabelEncoder,
-    OneHotEncoder
-)
 pd.set_option('mode.chained_assignment', None)
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -93,14 +83,15 @@ params = {'model__max_depth': [10, 20, 50, None], 'model__min_samples_leaf': [1,
           "model__criterion": ["gini", "entropy"], "model__max_features": ["auto", "log2", 7, 2]}
 
 cv = utils.kfold_for_cross_validation()
-gscv = GridSearchCV(
-    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True, refit=True
-).fit(X, y)
-# -
+#gscv = GridSearchCV(
+#    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True, refit=True
+#).fit(X, y)
 
-gscv.best_params_
+# +
+#gscv.best_params_
 
-gscv.best_score_
+# +
+#gscv.best_score_
 
 # +
 from sklearn.model_selection import GridSearchCV
@@ -108,21 +99,24 @@ params = {'model__max_depth': np.arange(5,15), 'model__min_samples_leaf': np.ara
          "model__n_estimators": [75, 100, 125], "model__min_samples_split": np.arange(12, 25)}
 
 cv = utils.kfold_for_cross_validation()
-gscv = GridSearchCV(
-    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True, refit=True
-).fit(X, y)
+#gscv = GridSearchCV(
+#    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True, refit=True
+#).fit(X, y)
+
+# +
+#gscv.best_params_
+
+# +
+#gscv.best_score_
 # -
-
-gscv.best_params_
-
-gscv.best_score_
 
 preprocessor = pp.PreprocessingLE()
 model = RandomForestClassifier(random_state=pp.RANDOM_STATE, 
                                n_jobs=-1, 
-                               max_depth=11, 
+                               max_depth=8, 
                                min_samples_leaf=1, 
-                               min_samples_split=13)
+                               min_samples_split=14, 
+                               max_features=7)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
                      ("model", model)
@@ -137,9 +131,10 @@ utils.metricas_cross_validation(X, y, pipeline)
 preprocessor = pp.PreprocessingLE()
 model = RandomForestClassifier(random_state=pp.RANDOM_STATE, 
                                n_jobs=-1, 
-                               max_depth=11, 
+                               max_depth=8, 
                                min_samples_leaf=1, 
-                               min_samples_split=13)
+                               min_samples_split=14, 
+                               max_features=7)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
                      ("model", model)

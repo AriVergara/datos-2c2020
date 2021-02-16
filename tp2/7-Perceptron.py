@@ -15,13 +15,9 @@
 # ---
 
 import pandas as pd
-import preprocesing as pp
-import keras
-from sklearn import preprocessing, tree
+import preprocessing as pp
+import utils as utils
 import numpy as np
-from sklearn.model_selection import train_test_split, StratifiedKFold, cross_validate
-from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score
-import matplotlib.pyplot as plt
 pd.set_option('mode.chained_assignment', None)
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -34,17 +30,8 @@ import random
 seed = 100
 np.random.seed(seed)
 random.seed(seed)
-#import tensorflow as tf
-#tf.set_random_seed(seed)
 
-df_volvera = pd.read_csv('tp-2020-2c-train-cols1.csv')
-df_volvera.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
-df_datos = pd.read_csv('tp-2020-2c-train-cols2.csv')
-df_datos.rename(columns={c: c.lower().replace(" ","_") for c in df_volvera.columns}, inplace=True)
-df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_usuario')
-
-X = df.drop(columns="volveria", axis=1, inplace=False)
-y = df["volveria"]
+X, y = utils.importar_datos()
 
 # ### Modelo 1
 
@@ -59,14 +46,7 @@ pipeline = Pipeline([
 
 # #### Metricas
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
-scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
-scores_for_model = cross_validate(pipeline, X, y, cv=cv, scoring=scoring_metrics)
-print(f"Mean test roc auc is: {scores_for_model['test_roc_auc'].mean():.4f}")
-print(f"mean test accuracy is: {scores_for_model['test_accuracy'].mean():.4f}")
-print(f"mean test precision is: {scores_for_model['test_precision'].mean():.4f}")
-print(f"mean test recall is: {scores_for_model['test_recall'].mean():.4f}")
-print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
+utils.metricas_cross_validation(X, y, pipeline, True)
 
 # El mal resultado se puede deber a que los datos no son linealmente separables.
 
@@ -92,7 +72,7 @@ params = {
     'model__eta0': [1, 0.9, 0.5, 1.2]
 }
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
+cv = utils.kfold_for_cross_validation()
 gscv = GridSearchCV(
     pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True, refit=True
 ).fit(X, y)
@@ -118,18 +98,9 @@ pipeline = Pipeline([
 
 # #### Metricas
 
-cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
-scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
-scores_for_model = cross_validate(pipeline, X, y, cv=cv, scoring=scoring_metrics)
-print(f"Mean test roc auc is: {scores_for_model['test_roc_auc'].mean():.4f}")
-print(f"mean test accuracy is: {scores_for_model['test_accuracy'].mean():.4f}")
-print(f"mean test precision is: {scores_for_model['test_precision'].mean():.4f}")
-print(f"mean test recall is: {scores_for_model['test_recall'].mean():.4f}")
-print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
+utils.metricas_cross_validation(X, y, pipeline, True)
 
 # ### Metricas finales
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=pp.RANDOM_STATE, stratify=y, shuffle=True)
 
 pipeline = Pipeline([
     ("preprocessor", pp.PreprocessingSE()),
@@ -145,17 +116,6 @@ pipeline = Pipeline([
                         ))
 ])
 
-pipeline.fit(X_train, y_train)
-
-y_pred = pipeline.predict(X_test)
-y_pred_proba = pipeline.decision_function(X_test)
-
-scores = [accuracy_score, precision_score, recall_score, f1_score]
-columnas = ['AUC_ROC', 'Accuracy', 'Precision', 'Recall', 'F1 Score']
-results = [roc_auc_score(y_test, y_pred_proba)]
-results += [s(y_test, y_pred) for s in scores]
-display(pd.DataFrame([results], columns=columnas).style.hide_index())
+pipeline = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipeline, True)
 
 # Los resultados obtenidos fueron muy malos por lo que se abandonó el modelo.
-
-

@@ -15,11 +15,10 @@
 # ---
 
 import pandas as pd
-import preprocesing as pp
+import preprocessing as pp
 import numpy as np
 from sklearn.model_selection import train_test_split, StratifiedKFold, cross_validate
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score, plot_confusion_matrix
-import preprocesing as pp
 
 
 def kfold_for_cross_validation():
@@ -47,7 +46,7 @@ def metricas_cross_validation_con_cross_validate(X, y, classifier):
     return scores_for_model
 
 
-def metricas_cross_validation(X, y, clf):
+def metricas_cross_validation(X, y, clf, use_decision_function=False):
     kf = kfold_for_cross_validation()
 
     test_accuracies = []
@@ -63,7 +62,10 @@ def metricas_cross_validation(X, y, clf):
         
         clf.fit(X.loc[train_index,], y[train_index])
         y_predict_cv = clf.predict(X.loc[test_index,])
-        y_predict_proba_cv = clf.predict_proba(X.loc[test_index,])[:, 1]
+        if use_decision_function:
+            y_predict_proba_cv = clf.decision_function(X.loc[test_index,])
+        else:
+            y_predict_proba_cv = clf.predict_proba(X.loc[test_index,])[:, 1]
         
         oof_predictions[test_index] = y_predict_cv
         oof_predictions_proba[test_index] = y_predict_proba_cv
