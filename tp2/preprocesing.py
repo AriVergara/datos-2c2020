@@ -43,6 +43,7 @@ class PreprocessingLE(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
+        X = X.copy()
         X.loc[:, "fila_isna"] = X["fila"].isna().astype(int)
         X = X.drop(columns=["fila"], axis=1, inplace=False)
         X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
@@ -110,6 +111,7 @@ class PreprocessingOHE(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
+        X = X.copy()
         X.loc[:, "fila_isna"] = X["fila"].isna().astype(int)
         X = X.drop(columns=["fila"], axis=1, inplace=False)
         X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
@@ -159,6 +161,7 @@ class PreprocessingSE(BaseEstimator, TransformerMixin):
         self.scaler.fit(X[["edad", "precio_ticket", "parientes", "amigos"]])
         
     def transform(self, X):
+        X = X.copy()
         X.loc[:, "fila_isna"] = X["fila"].isna().astype(int)
         X = X.drop(columns=["fila"], axis=1, inplace=False)
         X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
@@ -202,6 +205,7 @@ class PreprocessingSE_2(BaseEstimator, TransformerMixin):
         return self
     
     def _transform(self, X):
+        X = X.copy()
         X.loc[:, "fila_isna"] = X["fila"].isna().astype(int)
         X = X.drop(columns=["fila"], axis=1, inplace=False)
         X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
