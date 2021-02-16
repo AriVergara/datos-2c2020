@@ -329,7 +329,7 @@ pipeline_categorical = Pipeline([("preprocessor", PreprocessingCategoricalNB1())
 from sklearn.ensemble import StackingClassifier
 
 estimadores = [('categorical_nb', pipeline_categorical), ('gaussian_nb', pipeline_gaussian)]
-cv = StratifiedKFold(n_splits=2, random_state=pp.RANDOM_STATE, shuffle=True)
+cv = StratifiedKFold(n_splits=5, random_state=pp.RANDOM_STATE, shuffle=True)
 
 stacked_naive_bayes = StackingClassifier(estimators=estimadores, final_estimator=GaussianNB(), stack_method="predict_proba", cv=cv)
 # -
@@ -359,7 +359,7 @@ pipeline_categorical = Pipeline([("preprocessor", PreprocessingCategoricalNB1())
                               ("model", CategoricalNB(alpha=2))
                      ])
 estimadores = [('categorical_nb', pipeline_categorical), ('gaussian_nb', pipeline_gaussian)]
-cv = StratifiedKFold(n_splits=2, random_state=pp.RANDOM_STATE, shuffle=True)
+cv = StratifiedKFold(n_splits=5, random_state=pp.RANDOM_STATE, shuffle=True)
 
 stacked_naive_bayes = StackingClassifier(estimators=estimadores, final_estimator=GaussianNB(), stack_method="predict_proba", cv=cv)
 # -
