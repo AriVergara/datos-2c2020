@@ -224,8 +224,7 @@ class PreprocessingSE(BaseEstimator, TransformerMixin):
     -Elimina columnas sin infromación valiosa (fila, id_usuario, id_ticket).
     -Encodea variables categóricas mediante OneHotEncoding (genero, nombre_sala, tipo_de_sala)
     -Completa los missing values de la columna edad con la media.
-    -Convierte en bins los valores de la columna precio_ticket.
-    -Escala los valores a media 0 y desvio estandar 1 con StandardScaler.
+    -Escala los valores numéricos (edad, precio_ticket, parientes y amigos) a media 0 y desvio estandar 1 con StandardScaler.
     """
     def __init__(self):
         super().__init__()
@@ -234,10 +233,15 @@ class PreprocessingSE(BaseEstimator, TransformerMixin):
     
     def fit(self, X, y=None):
         self.mean_edad = X["edad"].mean()
-        self.scaler.fit(self._transform(X))
+        self._fit_scaler(X)
         return self
     
-    def _transform(self, X):
+    def _fit_scaler(self, X):
+        X = X.copy()
+        X["edad"] = X["edad"].fillna(self.mean_edad)
+        self.scaler.fit(X[["edad", "precio_ticket", "parientes", "amigos"]])
+        
+    def transform(self, X):
         X.loc[:, "fila_isna"] = X["fila"].isna().astype(int)
         X = X.drop(columns=["fila"], axis=1, inplace=False)
         X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
@@ -245,7 +249,8 @@ class PreprocessingSE(BaseEstimator, TransformerMixin):
         X = X.drop(columns=["id_ticket"], axis=1, inplace=False)
 
         X["edad_isna"] = X["edad"].isna().astype(int)
-        X["edad"] = X["edad"].fillna(self.mean_edad)
+        
+        X[["edad", "precio_ticket", "parientes", "amigos"]] = self.scaler.transform(X[["edad", "precio_ticket", "parientes", "amigos"]])
         
         X = pd.get_dummies(X, columns=['genero'], dummy_na=True, drop_first=True) 
         
@@ -253,19 +258,7 @@ class PreprocessingSE(BaseEstimator, TransformerMixin):
         
         X = pd.get_dummies(X, columns=['nombre_sede'], dummy_na=True, drop_first=True)
 
-        X["precio_ticket_bins"] = X["precio_ticket"].apply(self._bins_segun_precio)
         return X
-
-    def transform(self, X):
-        X = self._transform(X)
-        return pd.DataFrame(self.scaler.transform(X), index=X.index, columns=X.columns)
-    
-    def _bins_segun_precio(self, valor):
-        if valor == 1:
-            return 1
-        if 2 <= valor <= 3:
-            return 2
-        return 3
     
 class PreprocessingSE_2(BaseEstimator, TransformerMixin):
     """
