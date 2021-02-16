@@ -353,6 +353,7 @@ class PreprocessingCategoricalNB1(BaseEstimator, TransformerMixin):
         X['genero_encoded'] = self.le_genero.transform(X['genero'].astype(str))
         X = X.drop(columns=["genero"], axis=1, inplace=False)
         
+        X["nombre_sede_isna"] = X["nombre_sede"].isna().astype(int)
         X["nombre_sede"] = X["nombre_sede"].fillna(self._moda_nombre_sede)
         X['nombre_sede_encoded'] = self.le_nombre_sede.transform(X['nombre_sede'].astype(str))
         X = X.drop(columns=["nombre_sede"], axis=1, inplace=False)
