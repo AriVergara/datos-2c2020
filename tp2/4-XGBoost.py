@@ -51,6 +51,7 @@ df = df_volvera.merge(df_datos, how='inner', right_on='id_usuario', left_on='id_
 X = df.drop(columns="volveria", axis=1, inplace=False)
 y = df["volveria"]
 
+
 # ### Modelo 1
 
 # - Label encoder para las categóricas
@@ -58,8 +59,82 @@ y = df["volveria"]
 
 # Como primera aproximación, se utiliza el preprocesador utilizado en Random Forest (que usa Label Encoding para las variables categóricas) dado que este modelo también se encuentra basado en árboles. Se utilizan los parámetros por deafault.
 
+class PreprocessingLE(BaseEstimator, TransformerMixin):
+    """
+    -Elimina columnas sin infromación valiosa (fila, id_usuario, id_ticket).
+    -Encodea variables categóricas mediante LabelEncoding (genero, nombre_sala, tipo_de_sala)
+    -Completa los missing values de la columna edad con la media
+    -Convierte en bins los valores de las columnas edad y precio_ticket.
+    """
+    def __init__(self):
+        super().__init__()
+        self.le_tipo_sala = LabelEncoder()
+        self.le_nombre_sede = LabelEncoder()
+        self.le_genero = LabelEncoder()
+        self.mean_edad = 0
+        self.moda_nombre_sede = ""
+    
+    def fit(self, X, y=None):
+        self.moda_nombre_sede = X["nombre_sede"].astype(str).mode()[0]
+        self.mean_edad = X["edad"].mean()
+        self.le_tipo_sala.fit(X['tipo_de_sala'].astype(str))
+        self.le_nombre_sede.fit(X['nombre_sede'].fillna(self.moda_nombre_sede).astype(str))
+        self.le_genero.fit(X['genero'].astype(str))
+        return self
+
+    def transform(self, X):
+        X.loc[:, "fila_isna"] = X["fila"].isna().astype(int)
+        X = X.drop(columns=["fila"], axis=1, inplace=False)
+        X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
+        X = X.drop(columns=["nombre"], axis=1, inplace=False)
+        X = X.drop(columns=["id_ticket"], axis=1, inplace=False)
+
+        X["edad_isna"] = X["edad"].isna().astype(int)
+        X["edad"] = X["edad"].fillna(self.mean_edad)
+        X["edad_bins"] = X["edad"].apply(self._bins_segun_edad_2)
+        X = X.drop(columns=["edad"], axis=1, inplace=False)
+        
+        X["nombre_sede_isna"] = X["nombre_sede"].isna().astype(int)
+        X['nombre_sede'] = X['nombre_sede'].fillna(self.moda_nombre_sede)
+        X['nombre_sede'] = self.le_nombre_sede.transform(X['nombre_sede'].astype(str))
+        
+        X['tipo_de_sala'] = self.le_tipo_sala.transform(X['tipo_de_sala'].astype(str))
+        
+        X['genero'] = self.le_genero.transform(X['genero'].astype(str))
+
+        X["precio_ticket_bins"] = X["precio_ticket"].apply(self._bins_segun_precio)
+        return X
+    
+    def _bins_segun_precio(self, valor):
+        if valor == 1:
+            return 1
+        if 2 <= valor <= 3:
+            return 2
+        return 3
+    
+    def _bins_segun_edad(self, edad): 
+        if edad <= 20:
+            return 1
+        if 20 < edad <= 30:
+            return 2
+        if 30 < edad <= 40:
+            return 3
+        return 4
+    
+    def _bins_segun_edad_2(self, edad): 
+        if edad <= 18:
+            return 1
+        if 18 < edad <= 30:
+            return 2
+        if 30 < edad <= 40:
+            return 3
+        if 40 < edad <= 70:
+            return 4
+        return 5
+
+
 pipeline = Pipeline([
-    ("preprocessor", pp.PreprocessingLE()),
+    ("preprocessor", PreprocessingLE()),
     ("model", XGBClassifier(use_label_encoder=False, eval_metric='logloss'))
 ])
 
@@ -196,6 +271,12 @@ pipeline = Pipeline([
     ("model", XGBClassifier(use_label_encoder=False, eval_metric='logloss'))
 ])
 
+pipeline = Pipeline([
+    ("preprocessor", PreprocessingLE()),
+    ("model", XGBClassifier(use_label_encoder=False, scale_pos_weight=1, subsample=0.8, colsample_bytree=0.8,
+                            objective="binary:logistic", eval_metric="logloss", n_estimators=50, learning_rate=0.2, njobs=-1))
+])
+
 # #### Metricas
 
 cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
@@ -207,30 +288,41 @@ print(f"mean test precision is: {scores_for_model['test_precision'].mean():.4f}"
 print(f"mean test recall is: {scores_for_model['test_recall'].mean():.4f}")
 print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 
-# ### Modelo 3
+# ### Modelo 4
 
-# - Con el Modelo 2, se corre Grid Search para buscar los mejores hiperparametros
+# - Con el Modelo 1, se corre Grid Search para buscar los mejores hiperparametros
+
+# Tuvimos un problema con este GridSearchCV. Por algún motivo, se quedaba estancado un largo rato en cada iteración. Para una grilla de tamaño 1 tardaba más de 10 minutos cuando entrenar el modelo por separado y aplicarle cross_validate tardaba un segundo. 
+#
+# Por ello se probaron a mano distintas configuraciones y se dejo la que mejor resultado obtuvo
 
 pipeline = Pipeline([
-    ("preprocessor", pp.PreprocessingLE()),
-    ("model", XGBClassifier(use_label_encoder=False, eval_metric='logloss'))
+    ("preprocessor", PreprocessingLE()),
+    ("model", XGBClassifier(use_label_encoder=False, scale_pos_weight=1, subsample=0.8, colsample_bytree=0.8,
+                            objective="binary:logistic", n_estimators=1000, learning_rate=0.01, n_jobs=-1,
+                            eval_metric="logloss", min_child_weight=6, max_depth=6, reg_alpha=0.05))
 ])
+
+cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
+scoring_metrics = ["accuracy", "f1", "precision", "recall", "roc_auc"]
+scores_for_model = cross_validate(pipeline, X, y, cv=cv, scoring=scoring_metrics)
+print(f"Mean test roc auc is: {scores_for_model['test_roc_auc'].mean():.4f}")
+print(f"mean test accuracy is: {scores_for_model['test_accuracy'].mean():.4f}")
+print(f"mean test precision is: {scores_for_model['test_precision'].mean():.4f}")
+print(f"mean test recall is: {scores_for_model['test_recall'].mean():.4f}")
+print(f"mean test f1_score is: {scores_for_model['test_f1'].mean():.4f}")
 
 # +
 params = {
-    'model__learning_rate': [0.05, 0.1, 0.15, 0.2, 0.3],
-    'model__max_depth': [3, 4, 5, 6, 8, 10],
-    'model__n_estimators': [50, 100, 200, 300],
-    'model__scale_pos_weight': [1],
-    'model__subsample': [0.8],
-    'model__colsample_bytree': [0.8],
-    'model__objective': ["binary:logistic"],
-    'model__min_child_weight':range(1,6,2),
+    'model__learning_rate': [0.05, 0.1, 0.3],
+    'model__max_depth': [3, 6, 10],
+    'model__n_estimators': [100, 300],
+    'model__min_child_weight': [1, 3, 5],
     'model__gamma': [0, 0.1, 0.2],
-    'model__use_label_encoder': [False],
-    'model__eval_metric': ['logloss', 'error', 'auc']
+    'model__eval_metric': ['logloss', 'error']
 }
 
+cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
 gscv = GridSearchCV(
     pipeline, params, scoring='roc_auc', n_jobs=-1, cv=8, return_train_score=True
 ).fit(X, y)
@@ -244,8 +336,10 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15,
                                                     random_state=pp.RANDOM_STATE, stratify=y)
 
 pipeline = Pipeline([
-    ("preprocessor", PreprocessingXGBoost()),
-    ("model", XGBClassifier(use_label_encoder=False, eval_metric='logloss'))
+    ("preprocessor", PreprocessingLE()),
+    ("model", XGBClassifier(use_label_encoder=False, scale_pos_weight=1, subsample=0.8, colsample_bytree=0.8,
+                            objective="binary:logistic", n_estimators=1000, learning_rate=0.01, n_jobs=-1,
+                            eval_metric="logloss", min_child_weight=6, max_depth=6, reg_alpha=0.05))
 ])
 
 pipeline.fit(X_train, y_train)
@@ -266,112 +360,5 @@ df_predecir = pd.read_csv('https://drive.google.com/uc?export=download&id=1I980-
 df_predecir['volveria'] = pipeline.predict(df_predecir)
 df_predecir = df_predecir[['id_usuario', 'volveria']]
 
-with open('Predicciones/6-KNN.csv', 'w') as f:
+with open('Predicciones/4-XGBoost.csv', 'w') as f:
     df_predecir.to_csv(f, sep=',', index=False)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class OneHotEncoderWrapper(object):
-    """
-        Wrappea un OneHotEncoder para poder manejar de forma correcta los Nans y evitar la dummy trap.
-        Si la columna presenta missings, no se dropea ninguna columna y se generan solo columnas para los valores correspondientes.
-        De esta manera, un 0 en todas las columnas representa un missing o bien un valor no visto en el set de entrenamiento.
-    """
-    def __init__(self, columnas):
-        super().__init__()
-        self._most_frequent_imputer = SimpleImputer(strategy='most_frequent', fill_value=1)
-        self._ohe = OneHotEncoder(handle_unknown="ignore", drop=None)
-        self._columnas = columnas
-        self._drop_first = False
-    
-    def fit(self, X, y=None):
-        X = X.copy()
-        X = X[self._columnas]
-        X = self._most_frequent_imputer.fit_transform(X)
-        if data[self._columna].isnull().sum() > 0:
-            data = data.dropna().astype(str)
-        else:
-            self._drop_first = True
-        self._ohe.fit(data)
-        return self
-
-    def transform(self, X):
-        X = X.copy()
-        column_transformed = pd.DataFrame(self._ohe.transform(
-            X[['nombre_sede']].dropna().astype(str)).todense().astype(int)).add_prefix(f'{self._columna}_')
-        X = pd.concat([X, column_transformed], axis=1)
-        X = X.drop(columns=[self._columna], axis=1, inplace=False)
-        if self._drop_first:
-            X = X.drop(columns=[f'{self._columna}_0'], axis=1, inplace=False)
-        return X
-
-
-class OneHotEncoderWrapper(object):
-    """
-        Wrappea un OneHotEncoder para poder manejar de forma correcta los Nans y evitar la dummy trap.
-        Si la columna presenta missings, no se dropea ninguna columna y se generan solo columnas para los valores correspondientes.
-        De esta manera, un 0 en todas las columnas representa un missing o bien un valor no visto en el set de entrenamiento.
-    """
-    def __init__(self, columna):
-        super().__init__()
-        self._ohe = OneHotEncoder(handle_unknown="ignore", drop=None)
-        self._columna = columna
-        self._drop_first = False
-    
-    def fit(self, X, y=None):
-        data = X[[self._columna]].copy()
-        if data[self._columna].isnull().sum() > 0:
-            data = data.dropna().astype(str)
-        else:
-            self._drop_first = True
-        self._ohe.fit(data)
-        return self
-
-    def transform(self, X):
-        X = X.copy()
-        column_transformed = pd.DataFrame(self._ohe.transform(
-            X[['nombre_sede']].fillna("").astype(str)).todense().astype(int)).add_prefix(f'{self._columna}_')
-        X = pd.concat([X, column_transformed], axis=1)
-        X = X.drop(columns=[self._columna], axis=1, inplace=False)
-        if self._drop_first:
-            X = X.drop(columns=[f'{self._columna}_0'], axis=1, inplace=False)
-        return X
-
-
-o = OneHotEncoderWrapper("genero")
-o.fit(X)
-o.transform(df_predecir)
-
-o._ohe.categories_
-
-df_predecir = pd.read_csv('https://drive.google.com/uc?export=download&id=1I980-_K9iOucJO26SG5_M8RELOQ5VB6A')
-
-s = SimpleImputer(strategy='most_frequent', fill_value=1)
-o = OneHotEncoder(handle_unknown="ignore", drop=None)
-o.fit(s.fit_transform(X[["nombre_sede", "tipo_de_sala"]]))
-
-o.categories_
-
-o.transform(X[["nombre_sede", "tipo_de_sala"]])
-
-
