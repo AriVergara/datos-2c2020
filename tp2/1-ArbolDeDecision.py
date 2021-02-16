@@ -81,9 +81,9 @@ params = {'model__max_depth': [10, 20, 50, None], 'model__min_samples_leaf': [1,
           "model__min_samples_split": [2, 5, 10, 15], "model__criterion": ["gini", "entropy"], 
           "model__max_features": ["auto", "log2", 7, 2]}
 cv = utils.kfold_for_cross_validation()
-gscv = GridSearchCV(pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True).fit(X, y)
-print(gscv.best_params_)
-print(gscv.best_score_)
+#gscv = GridSearchCV(pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True).fit(X, y)
+#print(gscv.best_params_)
+#print(gscv.best_score_)
 
 from sklearn.model_selection import GridSearchCV
 params = {'model__max_depth': np.arange(10,25), 'model__min_samples_leaf': np.arange(3,10),
@@ -91,9 +91,9 @@ params = {'model__max_depth': np.arange(10,25), 'model__min_samples_leaf': np.ar
           "model__max_features": ["auto", "log2"]+list(np.arange(5,10)),
          "model__criterion": ["gini", "entropy"]}
 cv = utils.kfold_for_cross_validation()
-gscv = GridSearchCV(pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True).fit(X, y)
-print(gscv.best_params_)
-print(gscv.best_score_)
+#gscv = GridSearchCV(pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True).fit(X, y)
+#print(gscv.best_params_)
+#print(gscv.best_score_)
 
 model = tree.DecisionTreeClassifier(random_state=pp.RANDOM_STATE, 
                                max_depth=13, 
