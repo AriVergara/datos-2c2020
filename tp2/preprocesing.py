@@ -281,16 +281,24 @@ class PreprocessingSE_2(BaseEstimator, TransformerMixin):
         self.le_tipo_sala.fit(X['tipo_de_sala'].astype(str))
         self.le_nombre_sede.fit(X['nombre_sede'].astype(str))
         self.le_genero.fit(X['genero'].astype(str))
-        self.scaler.fit(self._transform(X))
+        self._fit_scaler(X)
         return self
     
-    def _transform(self, X):
+    def _fit_scaler(self, X):
+        X = X.copy()
+        X["edad"] = X["edad"].fillna(self.mean_edad)
+        self.scaler.fit(X[["edad", "precio_ticket", "parientes", "amigos"]])
+
+    def transform(self, X):
+        X = X.copy()
         X.loc[:, "fila_isna"] = X["fila"].isna().astype(int)
         X = X.drop(columns=["fila"], axis=1, inplace=False)
         X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
         X = X.drop(columns=["nombre"], axis=1, inplace=False)
         X = X.drop(columns=["id_ticket"], axis=1, inplace=False)
 
+        X[["edad", "precio_ticket", "parientes", "amigos"]] = self.scaler.transform(X[["edad", "precio_ticket", "parientes", "amigos"]])
+        
         X["edad_isna"] = X["edad"].isna().astype(int)
         X["edad"] = X["edad"].fillna(self.mean_edad)
         
@@ -299,12 +307,7 @@ class PreprocessingSE_2(BaseEstimator, TransformerMixin):
         X['tipo_de_sala'] = self.le_tipo_sala.transform(X['tipo_de_sala'].astype(str))
         
         X['genero'] = self.le_genero.transform(X['genero'].astype(str))
-        
         return X
-
-    def transform(self, X):
-        X = self._transform(X)
-        return self.scaler.transform(X)
     
     def _bins_segun_precio(self, valor):
         if valor == 1:
