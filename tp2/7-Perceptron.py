@@ -60,26 +60,27 @@ pipeline = Pipeline([
 ])
 
 # +
-from sklearn.model_selection import GridSearchCV
-params = {
-    'model__penalty': ["elasticnet"],
-    'model__alpha': [0.0001, 0.001, 0.00001],
-    'model__l1_ratio': [0, 0.15, 0.4, 0.5, 0.3, 1],
-    'model__max_iter': [1000, 2000],
-    'model__early_stopping': [True, False],
-    'model__n_iter_no_change': [5, 30, 60],
-    'model__eta0': [1, 0.9, 0.5, 1.2]
-}
+#from sklearn.model_selection import GridSearchCV
+#params = {
+#    'model__penalty': ["elasticnet"],
+#    'model__alpha': [0.0001, 0.001, 0.00001],
+#    'model__l1_ratio': [0, 0.15, 0.4, 0.5, 0.3, 1],
+#    'model__max_iter': [1000, 2000],
+#    'model__early_stopping': [True, False],
+#    'model__n_iter_no_change': [5, 30, 60],
+#    'model__eta0': [1, 0.9, 0.5, 1.2]
+#}
 
-cv = utils.kfold_for_cross_validation()
-gscv = GridSearchCV(
-    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True, refit=True
-).fit(X, y)
-print(gscv.best_score_)
-print(gscv.best_params_)
+#cv = utils.kfold_for_cross_validation()
+#gscv = GridSearchCV(
+#    pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True, refit=True
+#).fit(X, y)
+#print(gscv.best_score_)
+#print(gscv.best_params_)
+
+# +
+#gscv.best_estimator_
 # -
-
-gscv.best_estimator_
 
 pipeline = Pipeline([
     ("preprocessor", pp.PreprocessingSE()),
