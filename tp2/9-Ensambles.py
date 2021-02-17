@@ -83,7 +83,7 @@ def svm():
 
 def stacking_gaussian(var_smoothing=1e-9):
     estimadores = [('svm', svm()), ('xgboost', xgboost()), ('random_forest', random_forest())]
-    cv = StratifiedKFold(n_splits=8, random_state=pp.RANDOM_STATE, shuffle=True)
+    cv = utils.kfold_for_cross_validation()
     stacking = StackingClassifier(estimators=estimadores, final_estimator=GaussianNB(var_smoothing=var_smoothing), 
                                   stack_method="predict_proba", cv=cv)
     return stacking
