@@ -138,6 +138,7 @@ stacking = stacking_gaussian()
 
 # Al igual que en el Notebook de XGBoost, el Grid Search tarda mucho en correr a pesar de que la grilla es pequeña (solo final_estimator__var_smoothing tiene más de un valor). Para evitar esto se prueba el var_smoothing a mano.
 
+from sklearn.model_selection import cross_validate
 options = [1e-9, 1e-8, 1e-7, 1e-6, 1e-3, 5e-3, 1e-2, 3e-2, 5e-2, 0.1, 0.3]
 max_score_value = 0
 optimal_var_smothing = 0
@@ -201,3 +202,5 @@ pipeline = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipelin
 # ### Predicción HoldOut
 
 utils.predecir_holdout_y_generar_csv(pipeline, 'Predicciones/9-Ensambles.csv')
+
+
