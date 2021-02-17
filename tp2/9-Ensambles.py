@@ -142,18 +142,18 @@ from sklearn.model_selection import cross_validate
 options = [1e-9, 1e-8, 1e-7, 1e-6, 1e-3, 5e-3, 1e-2, 3e-2, 5e-2, 0.1, 0.3]
 max_score_value = 0
 optimal_var_smothing = 0
-for var_smothing in options:
-    stacking = stacking_gaussian(var_smothing)
-    cv = utils.kfold_for_cross_validation()
-    scoring_metrics = ["roc_auc"]
-    scores_for_model = cross_validate(stacking, X, y, cv=cv, scoring=scoring_metrics)
-    roc_auc_score_value = scores_for_model['test_roc_auc'].mean()
-    print(f"Corrio con var_smothing: {var_smothing}, roc_auc_score: {roc_auc_score_value}")
-    if roc_auc_score_value > max_score_value:
-        max_score_value = roc_auc_score_value
-        optimal_var_smothing = var_smothing
-print(f'var_smothing: {optimal_var_smothing}')
-print(f'roc_auc_score_value: {max_score_value}')
+#for var_smothing in options:
+#    stacking = stacking_gaussian(var_smothing)
+#    cv = utils.kfold_for_cross_validation()
+#    scoring_metrics = ["roc_auc"]
+#    scores_for_model = cross_validate(stacking, X, y, cv=cv, scoring=scoring_metrics)
+#    roc_auc_score_value = scores_for_model['test_roc_auc'].mean()
+#    print(f"Corrio con var_smothing: {var_smothing}, roc_auc_score: {roc_auc_score_value}")
+#    if roc_auc_score_value > max_score_value:
+#        max_score_value = roc_auc_score_value
+#        optimal_var_smothing = var_smothing
+#print(f'var_smothing: {optimal_var_smothing}')
+#print(f'roc_auc_score_value: {max_score_value}')
 
 stacking = stacking_gaussian(0.03)
 
@@ -181,26 +181,10 @@ utils.metricas_cross_validation(X, y, voting)
 
 # Se eligió el [Modelo 1](#Modelo-1), dado que es el modelo que tiene mejores métricas en general (especialmente en Recall y F1 Score). En cuanto al Roc Auc, son los 3 muy parecidos.
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15, 
-                                                    random_state=pp.RANDOM_STATE, stratify=y)
-
 pipeline = stacking_gaussian()
-
-pipeline.fit(X_train, y_train)
-
-y_pred = pipeline.predict(X_test)
-y_pred_proba = pipeline.predict_proba(X_test)[:, 1]
-
-scores = [accuracy_score, precision_score, recall_score, f1_score]
-columnas = ['AUC_ROC', 'Accuracy', 'Precision', 'Recall', 'F1 Score']
-results = [roc_auc_score(y_test, y_pred_proba)]
-results += [s(y_test, y_pred) for s in scores]
-display(pd.DataFrame([results], columns=columnas).style.hide_index())
 
 pipeline = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipeline)
 
 # ### Predicción HoldOut
 
 utils.predecir_holdout_y_generar_csv(pipeline, 'Predicciones/9-Ensambles.csv')
-
-
