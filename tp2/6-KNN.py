@@ -131,6 +131,8 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 
 pipeline = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipeline)
 
+# Se obtiene una buena métrica objetivo AUC-ROC, pero no se logra mejorar los resultados de Recall. Nuevamente el modelo obtiene una alta tasa de Falsos Negativos, calificando como que no volvería al 33% de los encuestados que sí volverían. La cantidad de Falsos Positivos es baja por lo cual no se ve reducido significativamente el AUC-ROC.
+
 # ### Predicción HoldOut
 
 utils.predecir_holdout_y_generar_csv(pipeline, 'Predicciones/6-KNN.csv')

@@ -466,6 +466,8 @@ pipeline = Pipeline([("preprocessor", pp.PreprocessingSE()),
 
 pipeline = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipeline)
 
+# Se obtiene una buena métrica objetivo AUC-ROC, pero no se logra mejorar los resultados de Recall. La matriz de confusión muesta un resultado muy similar al obtenido por 6-KNN, el modelo obtiene una alta tasa de Falsos Negativos, calificando como que no volvería al 33% de los encuestados que sí volverían.
+
 # Aclaración: Se setearon todos los seeds que se encontraron en la documentación de Keras para lograr resultados reproducibles, sin embargo no se pudo lograr que las metricas no varien en las distintas ejecuciones.
 
 # ### Predicción HoldOut

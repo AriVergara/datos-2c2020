@@ -34,10 +34,10 @@ X, y = utils.importar_datos()
 
 # ### Modelo 1
 
-# - Preprocesamiento con LaberEncoding
+# - Preprocesamiento con OneHotEncoding
 # - Hiperparametros por defecto
 
-preprocessor = pp.PreprocessingLE()
+preprocessor = pp.PreprocessingOHE()
 model = tree.DecisionTreeClassifier(random_state=pp.RANDOM_STATE)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
@@ -69,7 +69,7 @@ utils.metricas_cross_validation(X, y, pipeline)
 # - Preprocesamiento con LabelEncoder
 # - Estimación de Hiperparametros con GridSearchCV
 
-preprocessor = pp.PreprocessingLE()
+preprocessor = pp.PreprocessingOHE()
 model = tree.DecisionTreeClassifier(random_state=pp.RANDOM_STATE)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
@@ -81,9 +81,9 @@ params = {'model__max_depth': [10, 20, 50, None], 'model__min_samples_leaf': [1,
           "model__min_samples_split": [2, 5, 10, 15], "model__criterion": ["gini", "entropy"], 
           "model__max_features": ["auto", "log2", 7, 2]}
 cv = utils.kfold_for_cross_validation()
-#gscv = GridSearchCV(pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True).fit(X, y)
-#print(gscv.best_params_)
-#print(gscv.best_score_)
+gscv = GridSearchCV(pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True).fit(X, y)
+print(gscv.best_params_)
+print(gscv.best_score_)
 
 from sklearn.model_selection import GridSearchCV
 params = {'model__max_depth': np.arange(10,25), 'model__min_samples_leaf': np.arange(3,10),
@@ -91,9 +91,9 @@ params = {'model__max_depth': np.arange(10,25), 'model__min_samples_leaf': np.ar
           "model__max_features": ["auto", "log2"]+list(np.arange(5,10)),
          "model__criterion": ["gini", "entropy"]}
 cv = utils.kfold_for_cross_validation()
-#gscv = GridSearchCV(pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True).fit(X, y)
-#print(gscv.best_params_)
-#print(gscv.best_score_)
+gscv = GridSearchCV(pipeline, params, scoring='roc_auc', n_jobs=-1, cv=cv, return_train_score=True).fit(X, y)
+print(gscv.best_params_)
+print(gscv.best_score_)
 
 model = tree.DecisionTreeClassifier(random_state=pp.RANDOM_STATE, 
                                max_depth=13, 
@@ -119,6 +119,8 @@ pipeline = Pipeline([("preprocessor", preprocessor),
                      ])
 
 pipeline = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipeline)
+
+# Como puede verse, la métrica objetivo AUC-ROC tiene un buen resultado en este modelo. Lo que no se logra es un buen resultado de Recall y eso puede verse también en la matriz de confusión: De los casos verdaderamente positivos el modelo selecciona como negativos al 24%, esa tasa de Falsos Negativos perjudica el resultado de todas las metricas, pero principalmente al Recall (recordando que `Recall = TP / (TP + FN)`.
 
 # ### Predicción HoldOut
 

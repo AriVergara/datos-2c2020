@@ -118,4 +118,4 @@ pipeline = Pipeline([
 
 pipeline = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipeline, True)
 
-# Los resultados obtenidos fueron muy malos por lo que se abandonó el modelo.
+# Los resultados obtenidos fueron muy malos por lo que se abandonó el modelo. Como puede verse, el modelo tiene una muy alta tasa de Falsos Positivos, afectando negativamente a todas las métricas. Esto puede deberse a que los datos no sean lineamente separables.

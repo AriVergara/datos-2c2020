@@ -120,6 +120,8 @@ pipeline = Pipeline([
 
 pipeline = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipeline)
 
+# La métrica objetivo AUC-ROC tiene un resultado similar al obtenido por los modelos basados en arboles. Por el momento esto indica que este tipo de modelos obtienen una menor tasa de Falsos Negativos, mejorando todas las metricas que dependen de ello. Sin embargo, la tasa de Falsos Positivos de este modelo es mayor que la obtenida en 2-RandomForest, por lo cual no logra obtener mejores métricas que dicho modelo.
+
 # ### Predicción HoldOut
 
 utils.predecir_holdout_y_generar_csv(pipeline, 'Predicciones/4-XGBoost.csv')

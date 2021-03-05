@@ -197,6 +197,8 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 
 pipeline = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipeline)
 
+# La métrica objetivo AUC-ROC de este modelo no supera a las obtenidas por los modelos basados en arboles. Es este caso se debe a la tasa de Falsos Positivos obtenidas por el modelo lo cual afecta a casi todas las métricas pero principalmente a Precisión, por eso es el modelo que obtiene peor resultado en ese apartado hasta el momento.
+
 # ### Predicción HoldOut
 
 utils.predecir_holdout_y_generar_csv(pipeline, 'Predicciones/5-SVM.csv')
