@@ -43,7 +43,7 @@ X, y = utils.importar_datos()
 # - Se utilizan los mejores modelos obtenidos para XGBoost, Random Forest y SVM
 
 def random_forest():
-    preprocessor = pp.PreprocessingLE()
+    preprocessor = pp.PreprocessingOHE()
     model = RandomForestClassifier(random_state=pp.RANDOM_STATE, 
                                    n_jobs=-1, 
                                    max_depth=8, 
@@ -58,7 +58,7 @@ def random_forest():
 
 def xgboost():
     pipeline = Pipeline([
-    ("preprocessor", pp.PreprocessingLE()),
+    ("preprocessor", pp.PreprocessingOHE()),
     ("model", XGBClassifier(use_label_encoder=False, scale_pos_weight=1, subsample=0.8, colsample_bytree=0.8,
                             objective="binary:logistic", n_estimators=1000, learning_rate=0.01, n_jobs=-1,
                             eval_metric="logloss", min_child_weight=6, max_depth=6, reg_alpha=0.05))
@@ -185,7 +185,7 @@ pipeline = stacking_gaussian()
 
 pipeline = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipeline)
 
-# Este ensamble logra la mejor métrica ROC-AUC entre todos los modelos y bastante similar a las obtenidas mediante 1-ArbolDeDecision y 2-RandomForest. Con la diferencia en que es el modelo con mejor Recall, debido a que la tasa de Falsos Negativos esta 2 puntos por debajo del Arbol de Decision y 6 por debajo de Random Forest. Sin embargo, obtiene peores resultados en cuanto a los Falsos Positivos, por lo cual no obtiene mejor Precision que dichos modelos.
+# Este ensamble logra la mejor métrica ROC-AUC entre todos los modelos, a pesar de ser bastante similar a las obtenidas mediante 1-ArbolDeDecision y 2-RandomForest. Con la diferencia en que es el modelo con mejor Recall, debido a que la tasa de Falsos Negativos esta 2 puntos por debajo del Arbol de Decision y 6 por debajo de Random Forest. Sin embargo, obtiene peores resultados en cuanto a los Falsos Positivos, por lo cual no obtiene mejor Precision que dichos modelos.
 
 # ### Predicción HoldOut
 

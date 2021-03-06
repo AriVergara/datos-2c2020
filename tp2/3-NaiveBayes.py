@@ -145,7 +145,7 @@ stacked_naive_bayes = StackingClassifier(estimators=estimadores, final_estimator
 
 stacked_naive_bayes = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, stacked_naive_bayes)
 
-# La métrica objetivo AUC-ROC no obtiene un buen resultado comparandola con las obtenidas en los modelos anteriores basados en arboles. Esto es causa de la alta tasa de Falsos Negativos obtenida por el modelo (7 puntos por encima de la obtenida por RandomForest) lo que afecta a todas las métricas a excepción del Accuracy.
+# La métrica objetivo AUC-ROC no superó la barrera de 0.90 obtenida en los modelos anteriores basados en arboles. Esto es causa de la alta tasa de Falsos Negativos obtenida por el modelo (7 puntos por encima de la obtenida por RandomForest) lo que afecta a todas las métricas a excepción del Accuracy.
 
 # ### Predicción HoldOut
 

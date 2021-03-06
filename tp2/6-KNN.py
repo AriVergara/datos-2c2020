@@ -131,7 +131,7 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 
 pipeline = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipeline)
 
-# Se obtiene una buena métrica objetivo AUC-ROC, pero no se logra mejorar los resultados de Recall. Nuevamente el modelo obtiene una alta tasa de Falsos Negativos, calificando como que no volvería al 33% de los encuestados que sí volverían. La cantidad de Falsos Positivos es baja por lo cual no se ve reducido significativamente el AUC-ROC.
+# Se obtiene una buena métrica objetivo AUC-ROC, pero no se logra mejorar los resultados de Recall. Nuevamente el modelo obtiene una alta tasa de Falsos Negativos, calificando como que no volvería al 33% de los encuestados que sí volverían. La tasa de Falsos Positivos es baja por lo cual no se ve reducido significativamente el AUC-ROC. Las tasas de FP, FN, TP y TN son similares a las obtenidas por 3-NaiveBayes por lo que se obtiene también un valor similar de AUC-ROC.
 
 # ### Predicción HoldOut
 

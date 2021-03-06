@@ -109,7 +109,7 @@ utils.metricas_cross_validation(X, y, pipeline)
 
 # Se eligió el [Modelo 3](#Modelo-3) en base a los resultados obtenidos mediante `cross_validation`.
 
-preprocessor = pp.PreprocessingLE()
+preprocessor = pp.PreprocessingOHE()
 model = tree.DecisionTreeClassifier(random_state=pp.RANDOM_STATE, 
                                max_depth=13, 
                                min_samples_leaf=6, min_samples_split=2,max_features=6)
@@ -120,7 +120,7 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 
 pipeline = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipeline)
 
-# Como puede verse, la métrica objetivo AUC-ROC tiene un buen resultado en este modelo. Lo que no se logra es un buen resultado de Recall y eso puede verse también en la matriz de confusión: De los casos verdaderamente positivos el modelo selecciona como negativos al 24%, esa tasa de Falsos Negativos perjudica el resultado de todas las metricas, pero principalmente al Recall (recordando que `Recall = TP / (TP + FN)`.
+# Como puede verse, la métrica objetivo AUC-ROC tiene un buen resultado en este modelo. Lo que no se logra es un buen resultado de Recall y eso puede verse también en la matriz de confusión: De los casos verdaderamente positivos el modelo selecciona como negativos al 24%, esa tasa de Falsos Negativos perjudica el resultado de todas las métricas, pero principalmente al Recall (recordando que `Recall = TP / (TP + FN)`).
 
 # ### Predicción HoldOut
 
