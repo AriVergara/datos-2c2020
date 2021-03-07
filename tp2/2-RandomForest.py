@@ -37,7 +37,7 @@ X, y = utils.importar_datos()
 # - Preprocesamiento con LaberEncoding
 # - Hiperparametros por defecto
 
-preprocessor = pp.PreprocessingOHE()
+preprocessor = pp.PreprocessingLE()
 model = RandomForestClassifier(random_state=pp.RANDOM_STATE, n_jobs=-1)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
@@ -69,7 +69,7 @@ utils.metricas_cross_validation(X, y, pipeline)
 # - Preprocesamiento con LabelEncoder
 # - Estimación de Hiperparametros con GridSearchCV
 
-preprocessor = pp.PreprocessingOHE()
+preprocessor = pp.PreprocessingLE()
 model = RandomForestClassifier(random_state=pp.RANDOM_STATE, n_jobs=-1)
 
 pipeline = Pipeline([("preprocessor", preprocessor), 
@@ -110,7 +110,7 @@ cv = utils.kfold_for_cross_validation()
 #gscv.best_score_
 # -
 
-preprocessor = pp.PreprocessingOHE()
+preprocessor = pp.PreprocessingLE()
 model = RandomForestClassifier(random_state=pp.RANDOM_STATE, 
                                n_jobs=-1, 
                                max_depth=8, 
@@ -128,7 +128,7 @@ utils.metricas_cross_validation(X, y, pipeline)
 
 # Se eligió el Modelo 3 a partir de los valores obtenidos en Cross Validation (su roc_auc promedio es el mayor). 
 
-preprocessor = pp.PreprocessingOHE()
+preprocessor = pp.PreprocessingLE()
 model = RandomForestClassifier(random_state=pp.RANDOM_STATE, 
                                n_jobs=-1, 
                                max_depth=8, 

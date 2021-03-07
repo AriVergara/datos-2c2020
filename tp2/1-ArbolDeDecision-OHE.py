@@ -34,8 +34,6 @@ X, y = utils.importar_datos()
 
 # ### Metricas finales
 
-# Se eligió el [Modelo 3](#Modelo-3) en base a los resultados obtenidos mediante `cross_validation`.
-
 preprocessor = pp.PreprocessingOHE()
 model = tree.DecisionTreeClassifier(random_state=pp.RANDOM_STATE, 
                                max_depth=13, 

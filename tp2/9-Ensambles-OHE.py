@@ -91,7 +91,7 @@ pipeline = stacking_gaussian()
 
 pipeline = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipeline)
 
-# Este ensamble logra la mejor métrica ROC-AUC entre todos los modelos, a pesar de ser bastante similar a las obtenidas mediante 1-ArbolDeDecision y 2-RandomForest. Con la diferencia en que es el modelo con mejor Recall, debido a que la tasa de Falsos Negativos esta 2 puntos por debajo del Arbol de Decision y 6 por debajo de Random Forest. Sin embargo, obtiene peores resultados en cuanto a los Falsos Positivos, por lo cual no obtiene mejor Precision que dichos modelos.
+# Salvo el AUC-ROC, que disminuyó muy levemente con respecto al Ensamble que utiliza LE, las demás métricas son prácticamente iguales. Vemos que no influenció en el resultado final modificar el tipo de encoding utilizado tanto en XGBoost y en Random Forest.
 
 # ### Predicción HoldOut
 

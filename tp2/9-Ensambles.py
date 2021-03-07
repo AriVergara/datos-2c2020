@@ -43,7 +43,7 @@ X, y = utils.importar_datos()
 # - Se utilizan los mejores modelos obtenidos para XGBoost, Random Forest y SVM
 
 def random_forest():
-    preprocessor = pp.PreprocessingOHE()
+    preprocessor = pp.PreprocessingLE()
     model = RandomForestClassifier(random_state=pp.RANDOM_STATE, 
                                    n_jobs=-1, 
                                    max_depth=8, 
@@ -58,7 +58,7 @@ def random_forest():
 
 def xgboost():
     pipeline = Pipeline([
-    ("preprocessor", pp.PreprocessingOHE()),
+    ("preprocessor", pp.PreprocessingLE()),
     ("model", XGBClassifier(use_label_encoder=False, scale_pos_weight=1, subsample=0.8, colsample_bytree=0.8,
                             objective="binary:logistic", n_estimators=1000, learning_rate=0.01, n_jobs=-1,
                             eval_metric="logloss", min_child_weight=6, max_depth=6, reg_alpha=0.05))

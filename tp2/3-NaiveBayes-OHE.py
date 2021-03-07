@@ -51,7 +51,7 @@ stacked_naive_bayes = StackingClassifier(estimators=estimadores, final_estimator
 
 stacked_naive_bayes = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, stacked_naive_bayes)
 
-# La métrica objetivo AUC-ROC es mejor por la obtenida por el modelo de NaiveBayes que utiliza LabelEncoder. Sin embargo, la tasa de Falsos Negativos supera por 6 puntos a la de dicho modelo, por eso es muy bajo el resultado de Recall.
+# La métrica objetivo AUC-ROC es mejor por la obtenida por el modelo de NaiveBayes que utiliza LabelEncoder. Sin embargo, la tasa de Falsos Negativos supera por 6 puntos a la de dicho modelo, por eso es muy bajo el resultado de Recall. A su vez, también aumentó su Presition y la tasa de TN.
 
 # ### Predicción HoldOut
 

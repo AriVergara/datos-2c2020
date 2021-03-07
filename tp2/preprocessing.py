@@ -445,6 +445,39 @@ class PreprocessingCategoricalNB2(BaseEstimator, TransformerMixin):
     
     def _obtener_moda_nombre_sede(self, X):
         return X.nombre_sede.value_counts().index[0]
+
+
+class PreprocessingCategoricalNB3(BaseEstimator, TransformerMixin):
+    """
+    -Elimina columnas sin información valiosa1 y con valores continuos o discretos4.
+    -Encodea variables categóricas mediante OHE.
+    """
+    def __init__(self):
+        super().__init__()
+    
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        X = X.copy()
+        
+        X = pd.get_dummies(X, columns=['genero'], dummy_na=True, drop_first=True) 
+        
+        X = pd.get_dummies(X, columns=['tipo_de_sala'], dummy_na=True, drop_first=True) 
+        
+        X = pd.get_dummies(X, columns=['nombre_sede'], dummy_na=True, drop_first=True)
+        
+        
+        X = X.drop(columns=["fila"], axis=1, inplace=False)
+        X = X.drop(columns=["amigos"], axis=1, inplace=False)
+        X = X.drop(columns=["parientes"], axis=1, inplace=False)
+        X = X.drop(columns=["edad"], axis=1, inplace=False)
+        X = X.drop(columns=["id_usuario"], axis=1, inplace=False)
+        X = X.drop(columns=["nombre"], axis=1, inplace=False)
+        X = X.drop(columns=["id_ticket"], axis=1, inplace=False)
+        X = X.drop(columns=["precio_ticket"], axis=1, inplace=False)
+        
+        return X
     
 
 class PreprocessingGaussianNB1(BaseEstimator, TransformerMixin):

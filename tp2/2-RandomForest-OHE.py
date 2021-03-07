@@ -34,8 +34,6 @@ X, y = utils.importar_datos()
 
 # ### Métricas finales
 
-# Se eligió el Modelo 3 a partir de los valores obtenidos en Cross Validation (su roc_auc promedio es el mayor). 
-
 preprocessor = pp.PreprocessingOHE()
 model = RandomForestClassifier(random_state=pp.RANDOM_STATE, 
                                n_jobs=-1, 
@@ -50,10 +48,8 @@ pipeline = Pipeline([("preprocessor", preprocessor),
 
 pipeline = utils.entrenar_y_realizar_prediccion_final_con_metricas(X, y, pipeline)
 
-# La métrica objetivo AUC-ROC tiene un resultado similar al obtenido por 1-ArbolDeDecision. Nuevamente no se logra un buen resultado de Recall y eso se debe a que de los casos verdaderamente positivos el modelo selecciona como negativos al 28% (un 4% por encima del Arbol de Decision), esa tasa de Falsos Negativos perjudica directamente al Recall (recordando que `Recall = TP / (TP + FN)`. Sin embargo, la tasa de Falsos Positivos es considerablemente más baja que la del modelo anterior, por lo que el resultado obtenido en Precision es mucho mejor (recordando que `Precision = TP / (TP + FP)`).
+# La métrica objetivo AUC-ROC tiene un resultado similar al obtenido en el Random Forest con LE. Nuevamente no se logra un buen resultado de Recall y eso se debe a que de los casos verdaderamente positivos el modelo selecciona como negativos al 28% (un 4% por encima del Arbol de Decision), esa tasa de Falsos Negativos perjudica directamente al Recall (recordando que `Recall = TP / (TP + FN)`. Sin embargo, la tasa de Falsos Positivos es considerablemente más baja que la del modelo anterior, por lo que el resultado obtenido en Precision es mucho mejor (recordando que `Precision = TP / (TP + FP)`).
 
 # ### Predicción HoldOut
 
 utils.predecir_holdout_y_generar_csv(pipeline, 'Predicciones/2-RandomForest-OHE.csv')
-
-
